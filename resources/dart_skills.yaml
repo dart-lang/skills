@@ -1,12 +1,14 @@
 - name: dart-effective-style
   description: Maintain code consistency by following official Dart style and naming conventions.
   instructions: |
-    - Always name types (classes, enums, typedefs) using UpperCamelCase.
-    - Always name members and variables using lowerCamelCase.
-    - Consistency with existing code is prioritized, but official guidelines should lead.
-    - Run `dart format` as a mandatory step before committing code.
-    - Prefer relative imports for files located inside the `lib` directory of the same package.
-    - Use `_` for unused callback parameters.
+    - DO name types (classes, enums, typedefs) using UpperCamelCase.
+    - DO name members and variables using lowerCamelCase.
+    - PREFER consistency with existing code, but official guidelines should lead.
+    - DO run `dart format` as a mandatory step before committing code.
+    - PREFER relative imports for files located inside the `lib` directory of the same package.
+    - PREFER using `_`, `__`, etc., for unused callback parameters to signal intent.
+    - DO use a leading underscore `_` for members to indicate library privacy.
+    - Related Skills: `dart-static-analysis`, `dart-api-design`.
   resources:
     - https://dart.dev/effective-dart/style.html#naming
     - https://dart.dev/effective-dart/style.html#formatting
@@ -14,12 +16,13 @@
 - name: dart-documentation
   description: Use idiomatic doc comments to provide a professional API surface.
   instructions: |
-    - Use `///` exclusively for doc comments (avoid `/**`).
-    - Begin the first sentence with a brief, third-person singular summary.
-    - Place the summary on its own line for better readability in IDE tooltips.
-    - Use square brackets `[]` to link to types, methods, or variables in scope.
-    - Provide concise code examples for complex logic using markdown blocks.
-    - Verify generated docs using `dart doc --validate-links`.
+    - DO use `///` exclusively for doc comments (avoid `/**`).
+    - DO begin the first sentence with a brief, third-person singular summary.
+    - PREFER placing the summary on its own line for better readability in IDE tooltips.
+    - DO use square brackets `[]` to link to types, methods, or variables in scope.
+    - PREFER providing concise code examples for complex logic using markdown blocks.
+    - DO verify generated docs using `dart doc --validate-links`.
+    - Related Skills: `dart-effective-style`.
   resources:
     - https://dart.dev/effective-dart/documentation.html#doc-comments
     - https://dart.dev/tools/dart-doc.html
@@ -27,11 +30,12 @@
 - name: dart-static-analysis
   description: Configure and resolve static analysis warnings to maintain project health.
   instructions: |
-    - Run `dart analyze` to catch potential bugs and style violations early.
-    - Configure custom lint rules in `analysis_options.yaml` (prefer using `package:lints`).
-    - Resolve "non-promotion" reasons by using local variables for field promotion.
-    - Use `dart fix --apply` for bulk-fixing common lint and migration issues.
-    - Avoid ignoring lints manually unless absolutely necessary; prefer fixing the root cause.
+    - DO run `dart analyze` to catch potential bugs and style violations early.
+    - DO configure custom lint rules in `analysis_options.yaml` (prefer using `package:lints`).
+    - DO resolve "non-promotion" reasons by using local variables for field promotion.
+    - DO use `dart fix --apply` for bulk-fixing common lint and migration issues.
+    - AVOID ignoring lints manually unless absolutely necessary; prefer fixing the root cause.
+    - Related Skills: `dart-effective-style`, `dart-api-design`.
   resources:
     - https://dart.dev/tools/analysis.html#customizing-static-analysis
     - https://dart.dev/tools/linter-rules/index.html
@@ -40,12 +44,13 @@
 - name: dart-language-syntax
   description: Master core and advanced language syntax for expressive and type-safe code.
   instructions: |
-    - Prefer `var` for local variables with obvious types; use explicit types otherwise.
-    - Use `final` for variables that should not be reassigned.
-    - Master pattern matching (destructuring) in assignments and switch statements.
-    - Use records `(...)` for returning multiple values without defining a class.
-    - Implement generics `<T>` to ensure type safety in reusable components.
-    - Use extension methods and types to add functionality to existing classes.
+    - PREFER `var` for local variables with obvious types; use explicit types otherwise.
+    - DO use `final` for variables that should not be reassigned.
+    - DO master pattern matching (destructuring) in assignments and switch statements.
+    - DO use records `(...)` for returning multiple values without defining a class.
+    - DO implement generics `<T>` to ensure type safety in reusable components.
+    - DO use extension methods and types to add functionality to existing classes.
+    - Related Skills: `dart-idiomatic-usage`.
   resources:
     - https://dart.dev/language/variables.html
     - https://dart.dev/language/functions.html
@@ -56,11 +61,12 @@
 - name: dart-idiomatic-usage
   description: Apply Effective Dart usage patterns for cleaner and more efficient code.
   instructions: |
-    - Use collection literals (e.g., `[]`, `{}`) instead of constructors.
-    - Use `.isEmpty` and `.isNotEmpty` instead of checking length against zero.
-    - Use the spread operator `...` and collection-if/for for dynamic lists.
-    - Avoid `cast()` when possible; prefer `Map.from()` or similar conversions.
-    - Use string interpolation `$variable` instead of concatenation.
+    - DO use collection literals (e.g., `[]`, `{}`) instead of constructors.
+    - DO use `.isEmpty` and `.isNotEmpty` instead of checking length against zero.
+    - PREFER the spread operator `...` and collection-if/for for dynamic lists.
+    - AVOID `cast()` when possible; prefer `Map.from()` or similar conversions.
+    - PREFER string interpolation `$variable` instead of concatenation.
+    - Related Skills: `dart-language-syntax`, `dart-async-programming`.
   resources:
     - https://dart.dev/effective-dart/usage/index.html#collections
     - https://dart.dev/effective-dart/usage/index.html#strings
@@ -68,11 +74,12 @@
 - name: dart-async-programming
   description: Handle asynchronous operations safely using Futures and Streams.
   instructions: |
-    - Always use `async`/`await` instead of raw `.then()` calls for better readability.
-    - Wrap asynchronous calls in `try-catch` to handle errors gracefully.
-    - Use `Future.wait` to initiate multiple independent futures concurrently.
-    - Prefer `await for` when consuming streams if appropriate.
-    - Use `StreamController` with a `close()` call to prevent memory leaks.
+    - DO use `async`/`await` instead of raw `.then()` calls for better readability.
+    - DO wrap asynchronous calls in `try-catch` to handle errors gracefully.
+    - PREFER `Future.wait` to initiate multiple independent futures concurrently.
+    - PREFER `await for` over `forEach` or `listen` when consuming streams sequentially.
+    - DO use `StreamController` with a `close()` call to prevent memory leaks.
+    - Related Skills: `dart-idiomatic-usage`, `dart-concurrency-isolates`.
   resources:
     - https://dart.dev/language/async.html
     - https://dart.dev/libraries/async/async-await.html
@@ -81,10 +88,11 @@
 - name: dart-concurrency-isolates
   description: Offload heavy computation to isolates to keep the main thread responsive.
   instructions: |
-    - Use `Isolate.run()` for simple one-off background tasks.
-    - Manually manage `SendPort` and `ReceivePort` for complex, long-running background workers.
-    - Avoid passing large mutable objects between isolates; prefer simple data types.
-    - Ensure isolates are terminated when no longer needed to free resources.
+    - DO use `Isolate.run()` for simple one-off background tasks.
+    - DO manually manage `SendPort` and `ReceivePort` for complex, long-running background workers.
+    - AVOID passing large mutable objects between isolates; prefer simple data types.
+    - DO ensure isolates are terminated when no longer needed to free resources.
+    - Related Skills: `dart-async-programming`.
   resources:
     - https://dart.dev/language/isolates.html
     - https://dart.dev/language/concurrency.html
@@ -92,11 +100,12 @@
 - name: dart-package-management
   description: Structure packages and manage dependencies using the pub ecosystem.
   instructions: |
-    - Maintain a valid `pubspec.yaml` with clear version constraints (prefer `^`).
-    - Follow the "lib/" directory convention for public exports.
-    - Use `dart pub get` and `dart pub upgrade` to manage the `package_config.json`.
-    - Implement workspaces in monorepos to share dependencies across local packages.
-    - Ensure all public assets are listed correctly in the pubspec.
+    - DO maintain a valid `pubspec.yaml` with clear version constraints (prefer `^`).
+    - DO follow the "lib/" directory convention for public exports.
+    - DO use `dart pub get` and `dart pub upgrade` to manage the `package_config.json`.
+    - DO implement workspaces in monorepos to share dependencies across local packages.
+    - DO ensure all public assets are listed correctly in the pubspec.
+    - Related Skills: `dart-api-design`.
   resources:
     - https://dart.dev/tools/pub/pubspec.html
     - https://dart.dev/tools/pub/package-layout.html
@@ -105,20 +114,22 @@
 - name: dart-testing
   description: Ensure code correctness with comprehensive unit and integration tests.
   instructions: |
-    - Write tests using the `test` package with descriptive group and test names.
-    - Use `expect()` with appropriate matchers (e.g., `completion`, `throwsA`).
-    - Run tests via `dart test` and use flags for specific directories or tags.
-    - Use mock objects or fakes to isolate the system under test.
+    - DO write tests using the `test` package with descriptive group and test names.
+    - DO use `expect()` with appropriate matchers (e.g., `completion`, `throwsA`).
+    - DO run tests via `dart test` and use flags for specific directories or tags.
+    - PREFER mock objects or fakes to isolate the system under test.
+    - Related Skills: `dart-static-analysis`, `dart-code-generation`.
   resources:
     - https://dart.dev/tools/testing.html
 
 - name: dart-compilation-deployment
   description: Compile and deploy Dart apps for various native and web target platforms.
   instructions: |
-    - Use `dart compile exe` for self-contained native binaries on Windows/macOS/Linux.
-    - Use `dart compile js` or `dart compile wasm` for web deployment targets.
-    - Optimize for performance using AOT compilation where supported.
-    - Use `dartaotruntime` for running AOT snapshots in resource-constrained environments.
+    - DO use `dart compile exe` for self-contained native binaries on Windows/macOS/Linux.
+    - DO use `dart compile js` or `dart compile wasm` for web deployment targets.
+    - DO optimize for performance using AOT compilation where supported.
+    - DO use `dartaotruntime` for running AOT snapshots in resource-constrained environments.
+    - Related Skills: `dart-web-development`.
   resources:
     - https://dart.dev/tools/dart-compile.html
     - https://dart.dev/tools/dartaotruntime.html
@@ -126,10 +137,12 @@
 - name: dart-web-development
   description: Build high-performance web apps using modern interop and browser APIs.
   instructions: |
-    - Always prefer `package:web` over legacy `dart:html`.
-    - Use `dart:js_interop` with `@JS` annotations for external library calls.
-    - Avoid using `dart:mirrors` in web applications (not supported).
-    - Use `webdev serve` for a development environment with hot reload.
+    - DO prefer `package:web` over legacy `dart:html`.
+    - DO use `dart:js_interop` with `@JS` annotations for external library calls.
+    - PREFER Extension Types for defining JS interop boundaries and complex JS objects.
+    - AVOID using `dart:mirrors` in web applications (not supported).
+    - DO use `webdev serve` for a development environment with hot reload.
+    - Related Skills: `dart-migration-versioning`, `dart-compilation-deployment`.
   resources:
     - https://dart.dev/interop/js-interop/index.html
     - https://dart.dev/tools/webdev.html
@@ -137,28 +150,31 @@
 - name: dart-native-interop-ffi
   description: Bridge Dart with native C/C++ libraries using FFI.
   instructions: |
-    - Use `package:ffigen` to automate the generation of FFI bindings.
-    - Manually allocate and free memory using `calloc` or `malloc` if required.
-    - Use `Finalizable` and `NativeFinalizer` to ensure native resources are cleaned up.
-    - Prefer `abiSpecificInteger` for cross-platform type mapping.
+    - DO use `package:ffigen` to automate the generation of FFI bindings.
+    - DO manually allocate and free memory using `calloc` or `malloc` if required.
+    - DO use `Finalizable` and `NativeFinalizer` to ensure native resources are cleaned up.
+    - PREFER `abiSpecificInteger` for cross-platform type mapping.
+    - Related Skills: `dart-concurrency-isolates`.
   resources:
     - https://dart.dev/interop/c-interop/index.html
 
 - name: dart-code-generation
   description: Automate repetitive code tasks using the build_runner system.
   instructions: |
-    - Run `dart run build_runner build --delete-conflicting-outputs` to resolve build issues.
-    - Use `watch` for continuous background generation during development.
-    - Avoid committing `.g.dart` files if the project policy is to generate them on-the-fly.
+    - DO run `dart run build_runner build --delete-conflicting-outputs` to resolve build issues.
+    - PREFER `watch` for continuous background generation during development.
+    - AVOID committing `.g.dart` files if the project policy is to generate them on-the-fly.
+    - Related Skills: `dart-testing`, `dart-web-development`.
   resources:
     - https://dart.dev/tools/build_runner.html
 
 - name: dart-migration-versioning
   description: Manage language versioning and perform large-scale codebase upgrades.
   instructions: |
-    - Check current language version requirements in `pubspec.yaml`.
-    - Use `@dart = <version>` to pin specific files to older versions during migration.
-    - Consult breaking change logs before performing major dependency upgrades.
+    - DO check current language version requirements in `pubspec.yaml`.
+    - DO use `@dart = <version>` to pin specific files to older versions during migration.
+    - DO consult breaking change logs before performing major dependency upgrades.
+    - Related Skills: `dart-web-development`, `dart-static-analysis`.
   resources:
     - https://dart.dev/language/versioning.html
     - https://dart.dev/resources/breaking-changes.html
@@ -166,10 +182,13 @@
 - name: dart-api-design
   description: Apply design principles to create intuitive and robust library interfaces.
   instructions: |
-    - Prefer named parameters for functions with more than two arguments.
-    - Use type aliases (typedefs) to simplify complex function signatures.
-    - Avoid public fields; use getters and setters for encapsulation.
-    - Design for extension by using appropriate class modifiers (`interface`, `base`).
+    - PREFER named parameters for functions with more than two arguments.
+    - AVOID positional boolean parameters; use named parameters instead.
+    - CONSIDER omitting the 'is/can/has' prefix from named boolean parameters (e.g., `paused: true`).
+    - DO use type aliases (typedefs) to simplify complex function signatures.
+    - AVOID public fields; use getters and setters for encapsulation.
+    - DO design for extension by using appropriate class modifiers (`interface`, `base`, `sealed`).
+    - Related Skills: `dart-effective-style`, `dart-package-management`.
   resources:
     - https://dart.dev/effective-dart/design.html#naming
     - https://dart.dev/language/class-modifiers.html
