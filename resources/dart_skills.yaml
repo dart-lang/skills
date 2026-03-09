@@ -54,7 +54,7 @@
     - https://dart.dev/language/generics/index.html
 
 - name: dart-idiomatic-usage
-  description: Apply "Effective Dart: Usage" patterns for cleaner and more efficient code.
+  description: Apply Effective Dart usage patterns for cleaner and more efficient code.
   instructions: |
     - Use collection literals (e.g., `[]`, `{}`) instead of constructors.
     - Use `.isEmpty` and `.isNotEmpty` instead of checking length against zero.
@@ -135,7 +135,7 @@
     - https://dart.dev/tools/webdev.html
 
 - name: dart-native-interop-ffi
-  description: Bridge Dart with native C/C++ libraries using the FFI.
+  description: Bridge Dart with native C/C++ libraries using FFI.
   instructions: |
     - Use `package:ffigen` to automate the generation of FFI bindings.
     - Manually allocate and free memory using `calloc` or `malloc` if required.
