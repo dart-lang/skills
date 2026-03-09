@@ -3,86 +3,97 @@ name: "dart-compilation-deployment"
 description: "Compile and deploy Dart apps for various native and web target platforms."
 metadata:
   model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 21:42:58 GMT"
+  last_modified: "Mon, 09 Mar 2026 22:33:21 GMT"
 
 ---
-# Dart Compilation Manager
+# dart-compilation
 
 ## Goal
-Manages the compilation of Dart applications into highly optimized deployment formats. Evaluates target environments to select the appropriate compilation strategy, ranging from self-contained native executables and AOT snapshots to web-optimized JavaScript and WebAssembly. Handles cross-compilation routing, optimization flags, and runtime execution validation.
+Compiles Dart source code into optimized, target-specific formats including self-contained native executables, ahead-of-time (AOT) snapshots, just-in-time (JIT) modules, and web-deployable JavaScript or WebAssembly. Assumes the Dart SDK is installed, the target environment is configured, and the source code does not rely on unsupported libraries (e.g., `dart:mirrors`) for native compilation.
+
+## Decision Logic
+Use the following logic to determine the appropriate compilation target:
+
+*   **Is the target a Web environment?**
+    *   Yes -> Use `dart compile js` (or `dart compile wasm`). *See Related Skill: `dart-web-development`.*
+*   **Is the target a Native OS (Windows, macOS, Linux)?**
+    *   Does the deployment require a single, self-contained binary?
+        *   Yes -> Use `dart compile exe`.
+    *   Is the deployment environment resource-constrained (e.g., embedded systems, containers) where multiple apps share a runtime?
+        *   Yes -> Use `dart compile aot-snapshot` and execute with `dartaotruntime`.
+    *   Does the application benefit from profile-guided optimization via a training run?
+        *   Yes -> Use `dart compile jit-snapshot`.
+*   **Is the target platform-agnostic?**
+    *   Yes -> Use `dart compile kernel` to generate a portable `.dill` file.
 
 ## Instructions
 
-1. **Determine the Target Environment (Decision Logic)**
-   Evaluate the user's deployment requirements to select the correct compilation subcommand:
-   *   **Self-contained native binary (Windows/macOS/Linux):** Use `exe`.
-   *   **Resource-constrained native environment:** Use `aot-snapshot` (requires `dartaotruntime` on the host).
-   *   **Web deployment:** Use `js` or `wasm`.
-   *   **Fast startup with training data:** Use `jit-snapshot`.
-   *   **Portable intermediate representation:** Use `kernel`.
+1.  **Determine Compilation Target and Parameters**
+    Evaluate the project requirements against the Decision Logic. 
+    **STOP AND ASK THE USER:** "Which target platform and architecture are you compiling for? Do you require cross-compilation (e.g., compiling for Linux ARM64 from macOS)?"
 
-2. **Gather Compilation Parameters**
-   Identify if cross-compilation or specific optimization flags are required.
-   **STOP AND ASK THE USER:**
-   *   "What is the target operating system and architecture? (Note: Cross-compilation is only supported for Linux targets: `arm`, `arm64`, `riscv64`, `x64`)."
-   *   "Are there any specific environment variables to inject (e.g., `-D<flag>=<value>`)?"
-   *   "If targeting web (JS), what optimization level is required (`-O1` through `-O4`)?"
+2.  **Compile to Self-Contained Executable (Native)**
+    For standard native binaries, use the `exe` subcommand. This bundles the machine code and a minimal Dart runtime.
+    ```bash
+    dart compile exe bin/main.dart -o build/app.exe
+    ```
+    *Cross-Compilation (Linux targets only):*
+    ```bash
+    dart compile exe \
+      --target-os=linux \
+      --target-arch=arm64 \
+      bin/main.dart -o build/app_linux_arm64
+    ```
 
-3. **Execute the Compilation Command**
-   Construct and execute the appropriate `dart compile` command based on the decision logic.
+3.  **Compile to AOT Snapshot (Resource-Constrained)**
+    For environments where disk space is limited and a shared runtime is preferred, generate an AOT snapshot.
+    ```bash
+    dart compile aot-snapshot bin/main.dart -o build/app.aot
+    ```
+    *Execution:*
+    ```bash
+    dartaotruntime build/app.aot
+    ```
 
-   *For self-contained native binaries:*
-   ```bash
-   # Standard compilation
-   dart compile exe bin/main.dart -o bin/app.exe
+4.  **Compile to Web Targets (JS / Wasm)**
+    For web deployments, compile to optimized JavaScript or WebAssembly.
+    ```bash
+    # Compile to JS with aggressive optimizations (O2 is safe, O3/O4 omit type checks)
+    dart compile js -O2 -o build/app.js web/main.dart
+    
+    # Compile to WebAssembly
+    dart compile wasm web/main.dart -o build/app.wasm
+    ```
 
-   # Cross-compilation to Linux
-   dart compile exe --target-os=linux --target-arch=x64 bin/main.dart -o bin/app_linux_x64
-   ```
+5.  **Compile to JIT or Kernel Modules (Specialized)**
+    *JIT Snapshot (requires a training run):*
+    ```bash
+    dart compile jit-snapshot bin/main.dart -o build/app.jit
+    dart run build/app.jit
+    ```
+    *Portable Kernel:*
+    ```bash
+    dart compile kernel bin/main.dart -o build/app.dill
+    dart run build/app.dill
+    ```
 
-   *For resource-constrained environments (AOT Snapshot):*
-   ```bash
-   # Generate AOT snapshot
-   dart compile aot-snapshot bin/main.dart -o bin/app.aot
-   ```
+6.  **Validate-and-Fix Loop**
+    After executing the compilation command, verify the output file exists and test its execution.
+    ```bash
+    # Verify file generation
+    ls -la build/
 
-   *For Web (JavaScript):*
-   ```bash
-   # Compile to JS with O2 optimization (safe minification)
-   dart compile js -O2 -o build/app.js web/main.dart
-   
-   # Compile to JS with aggressive O4 optimization and environment variables
-   dart compile js -O4 -DAPI_URL=https://api.example.com -o build/app.js web/main.dart
-   ```
-
-   *For Web (WebAssembly):*
-   ```bash
-   dart compile wasm web/main.dart -o build/app.wasm
-   ```
-
-4. **Validate Output and Execution (Validate-and-Fix)**
-   Verify that the compiled artifact exists and functions correctly in its intended runtime.
-   
-   *If validating an `exe`:*
-   ```bash
-   # Verify file exists and is executable
-   ls -la bin/app.exe
-   ./bin/app.exe
-   ```
-
-   *If validating an `aot-snapshot`:*
-   ```bash
-   # Execute using the Dart AOT runtime
-   dartaotruntime bin/app.aot
-   ```
-
-   *Error Handling:* If the compilation fails due to the presence of build hooks, fallback to `dart build`. If JS compilation with `-O4` causes runtime type errors, downgrade to `-O2` and recompile.
+    # Test execution (example for exe)
+    ./build/app.exe
+    ```
+    *Error Handling:* If compilation fails due to build hooks, fallback to `dart build`. If type errors occur in JS compilation at `-O3` or `-O4`, downgrade to `-O2` and recompile.
 
 ## Constraints
-*   Use `dart compile exe` strictly for self-contained native binaries on Windows, macOS, or Linux.
-*   Use `dart compile js` or `dart compile wasm` strictly for web deployment targets.
-*   Optimize for performance using AOT compilation (`exe` or `aot-snapshot`) wherever natively supported.
-*   Use `dartaotruntime` for running AOT snapshots in resource-constrained environments; do not bundle the full Dart VM.
-*   Do not use `dart compile exe` or `dart compile aot-snapshot` if the package or its dependencies utilize build hooks (use `dart build` instead).
-*   Cross-compilation (`--target-os`) is strictly limited to `linux`. Do not attempt to cross-compile to macOS or Windows from another host.
-*   Do not use `dart:mirrors` or `dart:developer` libraries when compiling to `exe` or `aot-snapshot`.
+*   **DO NOT** use `dart compile exe` or `dart compile aot-snapshot` if the package or its dependencies utilize build hooks; these commands will fail. Use `dart build` instead.
+*   **DO NOT** use `dart:mirrors` or `dart:developer` in code targeted for `exe` or `aot-snapshot` compilation.
+*   **DO** use `dart compile exe` for self-contained native binaries on Windows/macOS/Linux.
+*   **DO** use `dart compile js` or `dart compile wasm` for web deployment targets.
+*   **DO** optimize for performance using AOT compilation where supported.
+*   **DO** use `dartaotruntime` for running AOT snapshots in resource-constrained environments.
+*   **DO NOT** attempt cross-compilation for target operating systems other than Linux.
+*   **DO NOT** use `-O3` or `-O4` JavaScript optimizations without verifying that the application never throws a subtype of `Error` (e.g., `TypeError`) and handles edge-case user input safely.

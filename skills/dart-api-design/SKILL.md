@@ -3,106 +3,123 @@ name: "dart-api-design"
 description: "Apply design principles to create intuitive and robust library interfaces."
 metadata:
   model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 21:45:09 GMT"
+  last_modified: "Mon, 09 Mar 2026 22:35:35 GMT"
 
 ---
-# Dart API Design and Class Modifiers
+# Dart Effective Design
 
 ## Goal
-Enforces idiomatic Dart API design principles, strict naming conventions, and precise access control using class modifiers. Analyzes Dart codebases to refactor classes, members, and types for optimal maintainability, encapsulation, and static safety, assuming a modern Dart 3.0+ environment.
+Analyzes and refactors Dart code to enforce idiomatic API design, strict type safety, and robust object-oriented hierarchies. Applies Dart 3 class modifiers to control extension and implementation boundaries, ensures proper encapsulation through getters and setters, and standardizes naming conventions for predictable, maintainable libraries.
 
 ## Instructions
 
-1. **Analyze the Target Code**
-   Review the provided Dart code for structural integrity, naming conventions, and type safety. Identify areas lacking encapsulation, missing class modifiers, or using outdated Dart paradigms.
+1.  **Apply Naming Conventions**
+    *   Use noun phrases for non-boolean properties/variables (e.g., `list.length`).
+    *   Use non-imperative verb phrases for boolean properties (e.g., `isEmpty`, `canClose`).
+    *   Use imperative verbs for methods with side effects (e.g., `list.add()`).
+    *   Use `to___()` for methods that copy state to a new object (e.g., `list.toSet()`).
+    *   Use `as___()` for methods returning a different representation backed by the original object (e.g., `map.asMap()`).
+    *   Follow standard generic type parameter mnemonics: `E` (elements), `K`/`V` (key/value), `R` (return type), `T`/`S`/`U` (general).
 
-2. **Apply Naming and Type Conventions**
-   Refactor identifiers and type annotations to match idiomatic Dart:
-   * Use noun phrases for non-boolean properties (`pageCount`) and non-imperative verb phrases for booleans (`isEmpty`, `canClose`).
-   * Use imperative verbs for side-effect methods (`list.add()`).
-   * Use `to___()` for copying state to a new object, and `as___()` for returning a different representation backed by the original object.
-   * Explicitly annotate return types, parameters, and uninitialized variables. Use `dynamic` explicitly if type inference should be disabled.
-   * Replace legacy typedefs with inline function types or modern typedefs.
+2.  **Determine Class Modifiers (Decision Logic)**
+    Evaluate every class declaration against the intended API boundary.
+    *   *Does the class require a full, concrete implementation of its interface?*
+        *   **No:** Use `abstract class`.
+    *   *Should external libraries be allowed to implement the class interface, but NOT inherit its implementation?*
+        *   **Yes:** Use `interface class` (or `abstract interface class` for pure interfaces).
+    *   *Should external libraries be allowed to inherit the implementation, but NOT implement the interface?*
+        *   **Yes:** Use `base class`. (Note: Subclasses must be marked `base`, `final`, or `sealed`).
+    *   *Is the class part of a closed, enumerable set of subtypes for exhaustive switching?*
+        *   **Yes:** Use `sealed class`.
+    *   *Should the class be completely locked from external extension and implementation?*
+        *   **Yes:** Use `final class`.
+    *   *Does the class contain only a single abstract method (e.g., `call`)?*
+        *   **Yes:** Convert to a `typedef` function type.
+    *   *Does the class contain only static members?*
+        *   **Yes:** Move members to top-level library declarations.
+    *   **STOP AND ASK THE USER:** If the extension/implementation intent of a public class is ambiguous, pause and ask the user to clarify the intended API boundary before applying modifiers.
 
-   ```dart
-   // BAD
-   typedef int Comparison<T>(T a, T b);
-   getBreakfastOrder() { ... }
-   
-   // GOOD
-   typedef Comparison<T> = int Function(T a, T b);
-   Order get breakfastOrder => ...
-   ```
+3.  **Enforce Parameter Rules**
+    *   Prefer named parameters for functions with more than two arguments.
+    *   Avoid positional boolean parameters.
+    *   Omit the verb (`is`, `can`, `has`) for named boolean parameters.
+    *   Use inclusive start and exclusive end parameters for ranges.
+    
+    ```dart
+    // GOOD
+    void configure(String name, {bool paused = false, bool growable = true}) {}
+    var sub = items.sublist(0, 3); 
+    
+    // BAD
+    void configure(String name, bool isPaused, bool canGrow) {}
+    ```
 
-3. **Refactor Parameters and Encapsulation**
-   * Convert functions with more than two arguments to use named parameters.
-   * Eliminate positional boolean parameters.
-   * Replace public fields with private fields exposed via getters and setters.
+4.  **Manage State and Encapsulation**
+    *   Prefer `final` for fields and top-level variables.
+    *   Avoid public fields; use getters and setters for encapsulation.
+    *   Do not define a setter without a corresponding getter.
+    *   Avoid public `late final` fields without initializers (this implicitly exposes a setter).
+    *   Use getters for operations that conceptually access properties (no arguments, returns a result, idempotent, no user-visible side effects).
 
-   ```dart
-   // BAD
-   class Configuration {
-     bool isEnabled;
-     void setup(String name, int retries, bool force) { ... }
-   }
+    ```dart
+    // GOOD
+    class Rectangle {
+      double _width;
+      Rectangle(this._width);
+      
+      double get width => _width;
+      set width(double value) => _width = value;
+      
+      double get area => _width * _width; // Idempotent, no side effects
+    }
+    ```
 
-   // GOOD
-   class Configuration {
-     bool _isEnabled = false;
-     
-     bool get isEnabled => _isEnabled;
-     set isEnabled(bool value) => _isEnabled = value;
+5.  **Apply Strict Type Annotations**
+    *   Annotate variables without initializers.
+    *   Annotate fields and top-level variables if the type isn't obvious.
+    *   Annotate return types and parameter types on non-local function declarations.
+    *   Do NOT redundantly annotate initialized local variables.
+    *   Do NOT annotate inferred parameter types on function expressions (closures).
+    *   Do NOT type annotate initializing formals (`this.x`).
+    *   Use inline function types over legacy typedefs.
+    *   Use `Future<void>` (not `void` or `Future<Null>`) for async members that do not produce values.
+    *   Avoid `FutureOr<T>` as a return type; return `Future<T>` instead.
 
-     void setup({
-       required String name,
-       int retries = 3,
-       bool force = false,
-     }) { ... }
-   }
-   ```
+    ```dart
+    // GOOD
+    typedef Comparison<T> = int Function(T a, T b);
+    
+    class FilteredObservable {
+      final bool Function(Event) _predicate; // Inline function type
+      FilteredObservable(this._predicate);
+    }
+    ```
 
-4. **Determine Class Modifiers (Decision Logic)**
-   Apply the correct class modifiers to control external library access. Use the following decision tree:
-   * **Does the class represent an enumerable set of subtypes for exhaustive switching?**
-     * YES: Use `sealed class`.
-   * **Should external libraries be completely prevented from extending OR implementing the class?**
-     * YES: Use `final class`.
-   * **Should external libraries be allowed to implement the interface, but NOT extend the implementation?**
-     * YES: Use `interface class`.
-   * **Should external libraries be allowed to extend the class, but NOT implement its interface (to guarantee base implementation)?**
-     * YES: Use `base class`.
-   * **Should the class prevent direct instantiation?**
-     * YES: Prepend `abstract` (e.g., `abstract interface class`).
+6.  **Implement Equality Safely**
+    *   If overriding `==`, you MUST override `hashCode`.
+    *   Ensure `==` is reflexive, symmetric, and transitive.
+    *   Avoid defining custom equality for mutable classes.
+    *   Do not make the parameter to `==` nullable (`Object` instead of `Object?`).
 
-   ```dart
-   // Example: Pure interface
-   abstract interface class Vehicle {
-     void moveForward(int meters);
-   }
+    ```dart
+    // GOOD
+    class Person {
+      final String name;
+      Person(this.name);
 
-   // Example: Exhaustive subtypes
-   sealed class NetworkResult {}
-   class Success extends NetworkResult {}
-   class Failure extends NetworkResult {}
-   ```
+      @override
+      bool operator ==(Object other) => other is Person && name == other.name;
 
-5. **Interactive Checkpoint**
-   **STOP AND ASK THE USER:** "Please provide the Dart code you would like me to refactor. Are there any specific external libraries that need to extend or implement these classes, which would affect the choice of class modifiers?"
-
-6. **Validate-and-Fix**
-   After generating the refactored code, verify the following:
-   * Are there any 1-member abstract classes? If so, convert them to `typedef` or inline function types.
-   * Are there any classes containing only static members? If so, extract them to top-level functions/variables.
-   * Do all overridden `==` operators also override `hashCode`?
-   * Fix any violations found during this validation step before presenting the final code.
+      @override
+      int get hashCode => name.hashCode;
+    }
+    ```
 
 ## Constraints
-* DO NOT use public fields; strictly use getters and setters for encapsulation.
-* DO NOT use positional boolean parameters.
-* DO NOT define a setter without a corresponding getter.
-* DO NOT use runtime type tests (`is`) to fake method overloading; use distinct method names.
-* DO NOT return `this` from methods just to enable a fluent interface; use Dart's cascade operator (`..`) instead.
-* DO NOT use the legacy typedef syntax.
-* DO NOT type annotate initializing formals (`this.x`) or inferred closure parameters.
-* ALWAYS prefer named parameters for functions with more than two arguments.
-* ALWAYS use inclusive start and exclusive end parameters for ranges.
+*   **No Positional Booleans:** Never generate function signatures with positional boolean arguments.
+*   **No Legacy Typedefs:** Never use the `typedef name(args)` syntax. Always use `typedef Name = ReturnType Function(args)`.
+*   **No Faked Overloading:** Do not use runtime type tests (`is`) to fake method overloading. Create distinctly named methods instead.
+*   **No Nullable Collections:** Avoid returning nullable `Future`, `Stream`, or collection types. Return empty collections instead.
+*   **No Fluent `this`:** Avoid returning `this` from methods just to enable a fluent interface; rely on Dart's cascade operator (`..`) instead.
+*   **No Raw Types:** Never write incomplete generic types (e.g., `List numbers = []`). Always specify type arguments or rely on complete inference.
+*   **Related Skills:** `dart-effective-style`, `dart-package-management`.
