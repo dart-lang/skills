@@ -114,7 +114,39 @@ Implements idiomatic Dart code leveraging advanced syntax, including pattern mat
    }
    ```
 
-7. **Validate and Fix**
+7. **Dot shorthands**
+   Use dot shorthand syntax (leading `.`) to omit the type when the compiler can infer it from context (requires Dart 3.10+).
+   * Context type is what the surrounding code expects (e.g. the variable being assigned, or the left-hand side of `==`).
+   * Prefer `.member` for enum values, static methods/fields, and constructors when the context type is clear (assignments, switch cases, parameter types).
+   * Use `.new()` for unnamed constructors where the type is already declared.
+   * In equality checks, use dot shorthand only on the **right-hand side** of `==` or `!=`; expression statements cannot start with `.`.
+   ```dart
+   // Enum values
+   enum Status { none, running, stopped, paused }
+   Status currentStatus = .running;
+
+   // Static members
+   int port = .parse('8080');
+   BigInt zero = .zero;
+
+   // Named and unnamed constructors
+   Point origin = .origin();
+   final ScrollController _scrollController = .new();
+   List<int> intList = .filled(5, 0);
+
+   // Switch over enum
+   return switch (level) {
+     .debug => 'gray',
+     .info => 'blue',
+     .error => 'red',
+     _ => 'unknown',
+   };
+
+   // Equality on right-hand side only
+   if (myColor == .green) { ... }
+   ```
+
+8. **Validate and Fix**
    After generating Dart code, verify that:
    * No null dereference errors are possible.
    * Records are used instead of custom classes for simple data tuples.
