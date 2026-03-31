@@ -1,9 +1,9 @@
 ---
-name: "dart-idiomatic-usage"
-description: "Apply Effective Dart usage patterns for cleaner and more efficient code."
+name: dart-idiomatic-usage
+description: Apply Effective Dart usage patterns for cleaner and more efficient code.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:30:31 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:30:31 GMT
 
 ---
 # Dart Effective Strings and Collections

@@ -1,9 +1,9 @@
 ---
-name: "dart-effective-style"
-description: "Maintain code consistency by following official Dart style and naming conventions."
+name: dart-effective-style
+description: Maintain code consistency by following official Dart style and naming conventions.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:28:16 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:28:16 GMT
 
 ---
 # dart-style-guide

@@ -1,9 +1,9 @@
 ---
-name: "dart-language-syntax"
-description: "Master core and advanced language syntax for expressive and type-safe code."
+name: dart-language-syntax
+description: Master core and advanced language syntax for expressive and type-safe code.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:30:03 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:30:03 GMT
 
 ---
 # dart-advanced-syntax-and-patterns

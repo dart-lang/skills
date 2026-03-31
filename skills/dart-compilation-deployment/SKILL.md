@@ -1,9 +1,9 @@
 ---
-name: "dart-compilation-deployment"
-description: "Compile and deploy Dart apps for various native and web target platforms."
+name: dart-compilation-deployment
+description: Compile and deploy Dart apps for various native and web target platforms.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:33:21 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:33:21 GMT
 
 ---
 # dart-compilation

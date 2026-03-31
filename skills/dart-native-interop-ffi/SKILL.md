@@ -1,9 +1,9 @@
 ---
-name: "dart-native-interop-ffi"
-description: "Bridge Dart with native C/C++ libraries using FFI."
+name: dart-native-interop-ffi
+description: Bridge Dart with native C/C++ libraries using FFI.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:34:17 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:34:17 GMT
 
 ---
 # dart-c-interop

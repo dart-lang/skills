@@ -1,9 +1,9 @@
 ---
-name: "dart-concurrency-isolates"
-description: "Offload heavy computation to isolates to keep the main thread responsive."
+name: dart-concurrency-isolates
+description: Offload heavy computation to isolates to keep the main thread responsive.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:31:33 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:31:33 GMT
 
 ---
 # dart-isolates-concurrency
