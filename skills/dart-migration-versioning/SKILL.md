@@ -1,9 +1,9 @@
 ---
-name: "dart-migration-versioning"
-description: "Manage language versioning and perform large-scale codebase upgrades."
+name: dart-migration-versioning
+description: Manage language versioning and perform large-scale codebase upgrades.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:35:09 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:35:09 GMT
 
 ---
 # Dart Version Management and Migration

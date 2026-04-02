@@ -1,9 +1,9 @@
 ---
-name: "dart-code-generation"
-description: "Automate repetitive code tasks using the build_runner system."
+name: dart-code-generation
+description: Automate repetitive code tasks using the build_runner system.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:34:48 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:34:48 GMT
 
 ---
 # dart-build-runner-automation

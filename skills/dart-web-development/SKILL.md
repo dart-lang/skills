@@ -1,9 +1,9 @@
 ---
-name: "dart-web-development"
-description: "Build high-performance web apps using modern interop and browser APIs."
+name: dart-web-development
+description: Build high-performance web apps using modern interop and browser APIs.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:33:50 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:33:50 GMT
 
 ---
 # dart-web-js-interop

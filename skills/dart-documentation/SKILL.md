@@ -1,9 +1,9 @@
 ---
-name: "dart-documentation"
-description: "Use idiomatic doc comments to provide a professional API surface."
+name: dart-documentation
+description: Use idiomatic doc comments to provide a professional API surface.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:28:42 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:28:42 GMT
 
 ---
 # dart-documentation

@@ -1,9 +1,9 @@
 ---
-name: "dart-static-analysis"
-description: "Configure and resolve static analysis warnings to maintain project health."
+name: dart-static-analysis
+description: Configure and resolve static analysis warnings to maintain project health.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:29:09 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:29:09 GMT
 
 ---
 # Dart Static Analysis and Type Promotion

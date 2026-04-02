@@ -1,9 +1,9 @@
 ---
-name: "dart-testing"
-description: "Ensure code correctness with comprehensive unit and integration tests."
+name: dart-testing
+description: Ensure code correctness with comprehensive unit and integration tests.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:32:51 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:32:51 GMT
 
 ---
 # Dart Testing Automation

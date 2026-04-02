@@ -1,9 +1,9 @@
 ---
-name: "dart-async-programming"
-description: "Handle asynchronous operations safely using Futures and Streams."
+name: dart-async-programming
+description: Handle asynchronous operations safely using Futures and Streams.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:31:03 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:31:03 GMT
 
 ---
 # dart-async-programming

@@ -1,9 +1,9 @@
 ---
-name: "dart-package-management"
-description: "Structure packages and manage dependencies using the pub ecosystem."
+name: dart-package-management
+description: Structure packages and manage dependencies using the pub ecosystem.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:32:01 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:32:01 GMT
 
 ---
 # Dart Package Management

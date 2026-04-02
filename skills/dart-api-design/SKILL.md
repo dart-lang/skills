@@ -1,9 +1,9 @@
 ---
-name: "dart-api-design"
-description: "Apply design principles to create intuitive and robust library interfaces."
+name: dart-api-design
+description: Apply design principles to create intuitive and robust library interfaces.
 metadata:
-  model: "models/gemini-3.1-pro-preview"
-  last_modified: "Mon, 09 Mar 2026 22:35:35 GMT"
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 09 Mar 2026 22:35:35 GMT
 
 ---
 # Dart Effective Design
