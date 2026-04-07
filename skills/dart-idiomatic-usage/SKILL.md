@@ -3,120 +3,155 @@ name: dart-idiomatic-usage
 description: Apply Effective Dart usage patterns for cleaner and more efficient code.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:30:31 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:18:33 GMT
 ---
-# Dart Effective Strings and Collections
+# Writing Idiomatic Dart Collections and Strings
 
-## Goal
-Analyzes and refactors Dart code to comply with the official "Effective Dart: Usage" guidelines specifically targeting string manipulation and collection handling. It enforces idiomatic syntax, optimizes performance by eliminating anti-patterns (like `.length` checks or `.cast()`), and ensures type-safe collection transformations. Assumes a modern Dart environment with null safety enabled.
+## Contents
+- [String Composition](#string-composition)
+- [Collection Initialization](#collection-initialization)
+- [Collection Operations](#collection-operations)
+- [Type Casting in Collections](#type-casting-in-collections)
+- [Workflow: Refactoring Legacy Collections](#workflow-refactoring-legacy-collections)
 
-## Instructions
+## String Composition
 
-1. **String Concatenation and Interpolation**
-   * Scan the code for string concatenations using the `+` operator.
-   * Replace adjacent string literal concatenations with adjacent strings (no operator).
-   * Replace variable concatenations with string interpolation.
-   * Remove unnecessary curly braces in interpolations where the identifier is not followed by alphanumeric text.
-   ```dart
-   // BAD
-   var s1 = 'Hello ' + name + '!';
-   var s2 = 'Hi, ${name}!';
-   var s3 = 'Part 1 ' + 
-            'Part 2';
+Follow these practices to compose strings efficiently and readably.
 
-   // GOOD
-   var s1 = 'Hello $name!';
-   var s2 = 'Hi, $name!';
-   var s3 = 'Part 1 '
-            'Part 2';
-   ```
+- **Use adjacent strings for concatenation:** Do not use the `+` operator to concatenate string literals. Place them next to each other to form a single string.
+- **Prefer string interpolation:** Use `$variable` or `${expression}` to compose strings and values instead of concatenation (`+`).
+- **Omit unnecessary curly braces:** Use `$identifier` instead of `${identifier}` when interpolating a simple identifier that is not immediately followed by alphanumeric text.
 
-2. **Collection Initialization**
-   * Replace unnamed constructor calls for `Map`, `Set`, and `List` with collection literals.
-   * Utilize the spread operator (`...`, `...?`) and collection `if`/`for` for dynamic collection building instead of `.add()` or `.addAll()`.
-   ```dart
-   // BAD
-   var addresses = Map<String, Address>();
-   var counts = Set<int>();
-   var args = <String>[];
-   args.addAll(options);
-   if (flag != null) args.add(flag);
+### Examples
 
-   // GOOD
-   var addresses = <String, Address>{};
-   var counts = <int>{};
-   var args = [
-     ...options,
-     if (flag != null) flag,
-   ];
-   ```
+**Good:**
+```dart
+// Adjacent strings
+raiseAlarm(
+  'ERROR: Parts of the spaceship are on fire. Other '
+  'parts are overrun by martians. Unclear which are which.',
+);
 
-3. **Collection Emptiness Checks**
-   * Identify any collection checks comparing `.length` to `0`.
-   * Replace them with `.isEmpty` or `.isNotEmpty`.
-   ```dart
-   // BAD
-   if (items.length == 0) return;
-   if (items.length > 0) process(items);
+// Interpolation without unnecessary braces
+var greeting = 'Hi, $name! I love your ${decade}s costume.';
+```
 
-   // GOOD
-   if (items.isEmpty) return;
-   if (items.isNotEmpty) process(items);
-   ```
+**Bad:**
+```dart
+// Do not use + for literals or variables
+raiseAlarm(
+  'ERROR: Parts of the spaceship are on fire. Other ' +
+  'parts are overrun by martians. Unclear which are which.',
+);
 
-4. **Iteration Logic (Decision Tree)**
-   Evaluate how iterables are being processed and apply the following logic:
-   * **IF** iterating over a `Map` -> **THEN** `map.forEach((k, v) { ... })` is acceptable.
-   * **IF** applying an existing function (tear-off) to an `Iterable` -> **THEN** use `iterable.forEach(functionName)`.
-   * **IF** executing a function literal/block on an `Iterable` -> **THEN** use a `for-in` loop.
-   ```dart
-   // BAD
-   people.forEach((person) {
-     person.greet();
-   });
+var greeting = 'Hi, ' + name + '! I love your ' + decade.toString() + 's costume.';
+var badBraces = 'Hi, ${name}!';
+```
 
-   // GOOD
-   for (final person in people) {
-     person.greet();
-   }
+## Collection Initialization
 
-   // GOOD (Tear-off)
-   people.forEach(print);
-   ```
+Leverage Dart's built-in syntax for creating and structuring collections.
 
-5. **Type Filtering and Casting (Decision Tree)**
-   Evaluate how collections are transformed or filtered by type:
-   * **IF** filtering an iterable to a specific type -> **THEN** use `.whereType<T>()`. Do NOT use `.where((e) => e is T)`.
-   * **IF** copying an iterable while preserving its original type -> **THEN** use `.toList()`.
-   * **IF** copying an iterable and changing its type -> **THEN** use `List<T>.from(iterable)`.
-   * **IF** `.cast<T>()` is used -> **THEN** refactor to avoid it. Prefer creating the collection with the correct type, casting elements on access, or eagerly casting with `List<T>.from()`.
-   ```dart
-   // BAD
-   var ints = objects.where((e) => e is int).cast<int>();
-   var copy = List.from(iterable); // when type change isn't needed
-   var casted = objects.cast<int>();
+- **Use collection literals:** Instantiate lists, maps, and sets using `[]`, `{}`, and `<Type>{}` instead of their unnamed constructors (e.g., `Map()`, `Set()`).
+- **Use spread and control flow operators:** Build dynamic collections using the spread operator (`...`, `...?`) and collection `if`/`for` rather than imperative `add()` or `addAll()` calls.
 
-   // GOOD
-   var ints = objects.whereType<int>();
-   var copy = iterable.toList();
-   var casted = List<int>.from(objects); // Eager cast
-   ```
+### Examples
 
-6. **Validate-and-Fix Loop**
-   * Review the refactored code.
-   * Verify that no `+` operators remain for string concatenation.
-   * Verify that `.cast()` is completely eliminated unless explicitly justified by lazy-evaluation requirements.
-   * **STOP AND ASK THE USER:** If the original code relies heavily on lazy evaluation via `.cast()` and converting to `List.from()` might cause performance regressions on massive datasets, pause and ask: *"Refactoring `.cast()` to `List.from()` forces eager evaluation. Is this collection large enough that we need to preserve lazy evaluation, or is eager instantiation acceptable?"*
+**Good:**
+```dart
+var points = <Point>[];
+var addresses = <String, Address>{};
 
-## Constraints
+var arguments = [
+  ...options,
+  command,
+  ...?modeFlags,
+  for (var path in filePaths)
+    if (path.endsWith('.dart')) path.replaceAll('.dart', '.js'),
+];
+```
 
-* DO NOT use `Map()`, `Set()`, or `List()` unnamed constructors.
-* DO NOT use `.length == 0` or `.length > 0` for iterables.
-* DO NOT use `Iterable.forEach()` with a function literal.
-* DO NOT use `.cast()` when a nearby operation (like `List.from()` or `.map<T>()`) will suffice.
-* DO NOT use `where((e) => e is T)`; strictly enforce `whereType<T>()`.
-* DO NOT use `+` for string concatenation of literals or variables.
-* PREFER string interpolation (`$variable`) over concatenation.
-* PREFER the spread operator (`...`) and collection-if/for over imperative `.add()`/`.addAll()` mutations.
-* AVOID curly braces in string interpolation unless required for expression evaluation or disambiguation.
+**Bad:**
+```dart
+var addresses = Map<String, Address>();
+
+var arguments = <String>[];
+arguments.addAll(options);
+arguments.add(command);
+if (modeFlags != null) arguments.addAll(modeFlags);
+```
+
+## Collection Operations
+
+Optimize collection querying and iteration.
+
+- **Use `.isEmpty` and `.isNotEmpty`:** Never check if a collection's `.length` is `0` or `> 0`. The `Iterable` contract does not guarantee constant-time length calculations.
+- **Avoid `Iterable.forEach()` with function literals:** Use standard `for-in` loops when iterating over sequences. Reserve `forEach()` for passing existing function tear-offs (e.g., `people.forEach(print)`).
+- **Use `whereType<T>()`:** Filter collections by type using the built-in `whereType<T>()` method rather than `where((e) => e is T)`.
+
+### Examples
+
+**Good:**
+```dart
+if (lunchBox.isEmpty) return 'so hungry...';
+
+for (final person in people) {
+  process(person);
+}
+
+var ints = objects.whereType<int>();
+```
+
+**Bad:**
+```dart
+if (lunchBox.length == 0) return 'so hungry...';
+
+people.forEach((person) {
+  process(person);
+});
+
+var ints = objects.where((e) => e is int).cast<int>();
+```
+
+## Type Casting in Collections
+
+Minimize the use of `.cast<T>()`, as it creates a lazy collection that checks the element type on *every operation*, degrading performance.
+
+- **Create with the correct type:** Define the collection with the correct generic type at instantiation.
+- **Eagerly cast using `List.from()`:** If you must convert a collection and will access most of its elements, use `List<T>.from(iterable)` or `Map<K, V>.from(map)` to eagerly cast the elements once.
+- **Preserve types with `.toList()`:** Use `.toList()` when you want to copy an iterable while preserving its original type. Use `List.from()` only when intentionally changing the type.
+
+### Examples
+
+**Good:**
+```dart
+// Eager cast
+var stuff = <dynamic>[1, 2];
+var ints = List<int>.from(stuff);
+
+// Map with explicit type
+var reciprocals = stuff.map<double>((n) => n * 2);
+```
+
+**Bad:**
+```dart
+// Lazy cast (performance hit on every access)
+var stuff = <dynamic>[1, 2];
+var ints = stuff.toList().cast<int>();
+
+var reciprocals = stuff.map((n) => n * 2).cast<double>();
+```
+
+## Workflow: Refactoring Legacy Collections
+
+When updating legacy Dart code to modern standards, follow this sequential checklist.
+
+### Task Progress
+- [ ] **Step 1: Replace Constructors.** Scan for `Map()`, `Set()`, and `List()` (if applicable). Replace with `<K, V>{}`, `<T>{}`, and `<T>[]`.
+- [ ] **Step 2: Eliminate `.length` checks.** Regex search for `.length == 0`, `.length > 0`, `.length != 0`. Replace with `.isEmpty` or `.isNotEmpty`.
+- [ ] **Step 3: Flatten imperative builds.** Identify sequential `.add()` and `.addAll()` calls on a newly instantiated collection. Rewrite using `...`, `if`, and `for` inside the collection literal.
+- [ ] **Step 4: Remove `.cast<T>()`.** Search for `.cast<`. 
+  - If applied after `.toList()`, replace with `List<T>.from()`.
+  - If applied after `.where()`, replace with `.whereType<T>()`.
+  - If applied after `.map()`, add the generic type to the map call: `.map<T>(...)`.
+- [ ] **Step 5: Run validator -> review errors -> fix.** Run `dart analyze` to ensure no type promotion or syntax errors were introduced during refactoring.

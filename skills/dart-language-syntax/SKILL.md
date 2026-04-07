@@ -3,129 +3,137 @@ name: dart-language-syntax
 description: Master core and advanced language syntax for expressive and type-safe code.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:30:03 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:18:04 GMT
 ---
-# dart-advanced-syntax-and-patterns
+# Writing Idiomatic Dart
 
-## Goal
-Implements idiomatic Dart code leveraging advanced syntax, including pattern matching, records, generics, and sound null safety, to produce robust, type-safe, and concise applications. This skill assumes a Dart 3.0+ environment and focuses on applying modern language features to optimize data structures, control flow, and API design.
+## Contents
+- [Variables and State Management](#variables-and-state-management)
+- [Functions and Closures](#functions-and-closures)
+- [Records and Pattern Matching](#records-and-pattern-matching)
+- [Generics and Type Safety](#generics-and-type-safety)
+- [Workflow: Refactoring to Idiomatic Dart](#workflow-refactoring-to-idiomatic-dart)
+- [Examples](#examples)
 
-## Instructions
+## Variables and State Management
+Manage state and variable declarations using strict mutability and type inference rules.
 
-1. **Variable Declaration and Null Safety**
-   Apply sound null safety and strict mutability rules when declaring variables.
-   * Use `var` for local variables with obvious types.
-   * Use `final` for variables that should not be reassigned.
-   * Use `const` for compile-time constants.
-   * Use `late` only when control flow analysis fails to detect initialization, or for expensive lazy initialization.
-   * Use wildcard variables `_` for non-binding placeholders (requires Dart 3.7+).
-   ```dart
-   final name = 'Bob'; // Immutable
-   var count = 0; // Obvious type
-   late final String expensiveResult = computeExpensiveValue();
-   
-   // Wildcard usage
-   for (var _ in list) {
-     print('Iterating without binding');
-   }
-   ```
+- **Prefer `var`:** Use `var` for local variables when the assigned type is obvious (e.g., `var name = 'Bob';`). Use explicit types when the type is not immediately clear from the initializer.
+- **Enforce Immutability:** Use `final` for variables that should not be reassigned after initialization. Use `const` for compile-time constants and to create canonicalized, immutable object instances.
+- **Leverage `late`:** Use the `late` modifier to defer initialization of non-nullable variables until their first use, especially for expensive computations or when initialization requires access to `this`.
+- **Implement Wildcards:** Use the wildcard variable `_` (requires Dart 3.7+) to discard unused values in local declarations, closures, or pattern matching without triggering unused variable warnings.
 
-2. **Function Design and Tear-offs**
-   Structure functions using named parameters, optional positional parameters, and tear-offs for concise callbacks.
-   * Use `required` for mandatory named parameters.
-   * Prefer tear-offs over lambdas when passing functions directly.
-   ```dart
-   // Named parameters with required and default values
-   void configure({required String id, bool verbose = false}) { ... }
+## Functions and Closures
+Structure functions for maximum composability and minimal boilerplate.
 
-   // Tear-offs
-   final charCodes = [68, 97, 114, 116];
-   final buffer = StringBuffer();
-   charCodes.forEach(buffer.write); // Method tear-off
-   ```
+- **Use Arrow Syntax:** Condense single-expression functions using the `=>` operator.
+- **Prefer Tear-offs:** Pass function references directly (tear-offs) instead of wrapping them in redundant anonymous closures (e.g., use `list.forEach(print)` instead of `list.forEach((e) => print(e))`).
+- **Implement Generators:** Use `sync*` to lazily generate `Iterable` sequences and `async*` to generate `Stream` sequences. Yield values using `yield` or delegate to other generators using `yield*`.
+- **Define Named Parameters:** Use named parameters `({required Type name})` for functions with boolean flags or multiple arguments to improve call-site readability.
 
-3. **Implementing Records for Multiple Returns**
-   Use records `(...)` to return multiple values without defining a dedicated class.
-   ```dart
-   // Returning a record
-   (String, int) fetchUserInfo(Map<String, dynamic> json) {
-     return (json['name'] as String, json['age'] as int);
-   }
+## Records and Pattern Matching
+Eliminate boilerplate data classes and complex conditional logic using records and patterns.
 
-   // Returning a record with named fields
-   ({String name, int age}) fetchNamedUserInfo() {
-     return (name: 'Dash', age: 10);
-   }
-   ```
+- **Return Multiple Values:** Use records `(Type, Type)` to return multiple values from a function without defining a dedicated class.
+- **Destructure Assignments:** Master pattern matching to destructure records, lists, and objects directly into local variables.
+- **Use Switch Expressions:** Replace complex `if-else` chains with switch expressions. Leverage logical-or patterns (`||`) and guard clauses (`when`) to share logic across cases.
+- **Validate JSON Declaratively:** Use map and list patterns to simultaneously validate structure, check types, and extract data from dynamic JSON payloads.
 
-4. **Pattern Matching and Destructuring (Decision Logic)**
-   Master pattern matching in assignments, switch statements, and JSON validation. Follow this decision logic when handling complex data:
-   * *If extracting values from a record or collection:* Use variable assignment/declaration patterns.
-   * *If branching logic based on object shape or type:* Use `switch` expressions with pattern matching and guard clauses (`when`).
-   * *If validating external data (e.g., JSON):* Use `if-case` statements with map/list patterns.
-   
-   ```dart
-   // Destructuring a record
-   var (name, age) = fetchUserInfo(json);
+## Generics and Type Safety
+Ensure type safety and reusability across collections and custom components.
 
-   // Switch expression with algebraic data types and guards
-   double calculateArea(Shape shape) => switch (shape) {
-     Square(length: final l) when l > 0 => l * l,
-     Circle(radius: final r) => math.pi * r * r,
-     _ => throw ArgumentError('Invalid shape'),
-   };
+- **Implement Generics:** Use `<T>` to parameterize classes, methods, and collections.
+- **Restrict Type Parameters:** Use `extends` to bound generic types (e.g., `<T extends Object>` to enforce non-nullability, or `<T extends BaseWidget>`).
+- **Use F-Bounds:** Implement self-referential type constraints when a class must interact with instances of its own exact type (e.g., `class Node<T extends Node<T>>`).
+- **Extend Functionality:** Use extension methods and extension types to add utility functions to existing generic or concrete classes without subclassing.
 
-   // JSON Validation using if-case
-   if (json case {'user': [String name, int age]}) {
-     print('User $name is $age years old.');
-   } else {
-     // Handle invalid JSON structure
-   }
-   ```
+## Workflow: Refactoring to Idiomatic Dart
 
-5. **Generics and Type Safety**
-   Implement generics `<T>` to ensure type safety in reusable components. Apply bounds (`extends`) to restrict parameterized types.
-   ```dart
-   // Restricting to non-nullable types
-   class Cache<T extends Object> {
-     final Map<String, T> _storage = {};
-     
-     T? getByKey(String key) => _storage[key];
-     void setByKey(String key, T value) => _storage[key] = value;
-   }
+Use this checklist to upgrade legacy Dart code to modern, idiomatic Dart 3+ standards.
 
-   // Generic method
-   T first<T>(List<T> items) {
-     if (items.isEmpty) throw StateError('No elements');
-     return items[0];
-   }
-   ```
+- [ ] **Task Progress: Variable Modernization**
+  - [ ] Replace explicit types with `var` for obvious local assignments.
+  - [ ] Convert mutable `var` declarations to `final` if they are never reassigned.
+  - [ ] Replace `__` or `___` unused parameters with the standard `_` wildcard.
+- [ ] **Task Progress: Control Flow & Returns**
+  - [ ] Replace custom "Tuple" or "Pair" classes with native Records `(T1, T2)`.
+  - [ ] Refactor redundant closures into function/method tear-offs.
+  - [ ] Convert single-statement function bodies to arrow `=>` syntax.
+- [ ] **Task Progress: Pattern Matching Integration**
+  - [ ] If extracting multiple fields from an object, use object destructuring: `var User(:name, :age) = user;`.
+  - [ ] If validating nested JSON, replace `is` checks and manual casting with map/list patterns.
+  - [ ] If switching over an algebraic data type (sealed class), convert `switch` statements to exhaustive `switch` expressions.
+- [ ] **Run Validator -> Review Errors -> Fix:** Run `dart analyze` and `dart format`. Resolve any linting errors related to type promotion or exhaustiveness.
 
-6. **Extension Methods and Types**
-   Use extension methods and types to add functionality to existing classes or to create zero-cost abstractions over records/types.
-   ```dart
-   extension type ButtonItem._(({String label, void Function() onPressed}) _) {
-     ButtonItem({required String label, required void Function() onPressed})
-         : this._((label: label, onPressed: onPressed));
-         
-     String get label => _.label;
-     void Function() get onPressed => _.onPressed;
-   }
-   ```
+## Examples
 
-7. **Validate and Fix**
-   After generating Dart code, verify that:
-   * No null dereference errors are possible.
-   * Records are used instead of custom classes for simple data tuples.
-   * Pattern matching is used for JSON validation instead of verbose `is` checks.
-   * **STOP AND ASK THE USER:** If the data structure shape for pattern matching is ambiguous or not provided, pause and ask the user for the expected JSON/Object schema before writing the destructuring logic.
+### Destructuring Multiple Returns (Records)
+**Input (Legacy):**
+```dart
+class UserInfo {
+  final String name;
+  final int age;
+  UserInfo(this.name, this.age);
+}
 
-## Constraints
-* DO NOT use `var` if the assigned type is not immediately obvious to the reader; use explicit types instead.
-* DO NOT use `dynamic` unless explicitly interacting with untyped external APIs (and immediately cast/validate it using patterns).
-* DO NOT define a class just to return multiple values from a function; strictly use records.
-* DO NOT use multiple underscores (`__`, `___`) for unused variables; use the single wildcard `_`.
-* DO NOT wrap tear-offs in anonymous functions (e.g., avoid `list.forEach((e) => print(e))`; use `list.forEach(print)`).
-* DO NOT use `is` checks and manual casting for JSON validation; strictly use `if-case` pattern matching.
-* Related Skills: `dart-idiomatic-usage`.
+UserInfo fetchUser() => UserInfo('Dash', 10);
+final info = fetchUser();
+print(info.name);
+```
+
+**Output (Idiomatic):**
+```dart
+(String, int) fetchUser() => ('Dash', 10);
+
+// Destructure directly into final variables
+final (name, age) = fetchUser();
+print(name);
+```
+
+### Declarative JSON Validation (Patterns)
+**Input (Legacy):**
+```dart
+if (json is Map<String, Object?> && json.containsKey('user')) {
+  var user = json['user'];
+  if (user is List<Object> && user.length == 2 && user[0] is String && user[1] is int) {
+    var name = user[0] as String;
+    var age = user[1] as int;
+    print('User $name is $age');
+  }
+}
+```
+
+**Output (Idiomatic):**
+```dart
+if (json case {'user': [String name, int age]}) {
+  print('User $name is $age');
+}
+```
+
+### Switch Expressions and Guard Clauses
+**Implementation:**
+```dart
+sealed class Shape {}
+class Square implements Shape { final double length; Square(this.length); }
+class Circle implements Shape { final double radius; Circle(this.radius); }
+
+double calculateArea(Shape shape) => switch (shape) {
+  Square(length: var l) when l > 0 => l * l,
+  Circle(:var radius) when radius > 0 => 3.14159 * radius * radius,
+  _ => 0.0, // Fallback for invalid dimensions
+};
+```
+
+### Extension Methods with Generics
+**Implementation:**
+```dart
+extension IterableExtensions<T> on Iterable<T> {
+  /// Returns the first element matching the predicate, or null.
+  T? firstWhereOrNull(bool Function(T) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+}
+```

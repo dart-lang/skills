@@ -3,123 +3,99 @@ name: dart-api-design
 description: Apply design principles to create intuitive and robust library interfaces.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:35:35 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:22:40 GMT
 ---
-# Dart Effective Design
+# Designing Effective Dart APIs
 
-## Goal
-Analyzes and refactors Dart code to enforce idiomatic API design, strict type safety, and robust object-oriented hierarchies. Applies Dart 3 class modifiers to control extension and implementation boundaries, ensures proper encapsulation through getters and setters, and standardizes naming conventions for predictable, maintainable libraries.
+## Contents
+- [Naming Conventions](#naming-conventions)
+- [Class Modifiers & Architecture](#class-modifiers--architecture)
+- [Members & Encapsulation](#members--encapsulation)
+- [Types & Signatures](#types--signatures)
+- [Parameters](#parameters)
+- [Workflows](#workflows)
 
-## Instructions
+## Naming Conventions
 
-1.  **Apply Naming Conventions**
-    *   Use noun phrases for non-boolean properties/variables (e.g., `list.length`).
-    *   Use non-imperative verb phrases for boolean properties (e.g., `isEmpty`, `canClose`).
-    *   Use imperative verbs for methods with side effects (e.g., `list.add()`).
-    *   Use `to___()` for methods that copy state to a new object (e.g., `list.toSet()`).
-    *   Use `as___()` for methods returning a different representation backed by the original object (e.g., `map.asMap()`).
-    *   Follow standard generic type parameter mnemonics: `E` (elements), `K`/`V` (key/value), `R` (return type), `T`/`S`/`U` (general).
+Enforce consistent, descriptive naming to leverage existing domain and core library knowledge.
 
-2.  **Determine Class Modifiers (Decision Logic)**
-    Evaluate every class declaration against the intended API boundary.
-    *   *Does the class require a full, concrete implementation of its interface?*
-        *   **No:** Use `abstract class`.
-    *   *Should external libraries be allowed to implement the class interface, but NOT inherit its implementation?*
-        *   **Yes:** Use `interface class` (or `abstract interface class` for pure interfaces).
-    *   *Should external libraries be allowed to inherit the implementation, but NOT implement the interface?*
-        *   **Yes:** Use `base class`. (Note: Subclasses must be marked `base`, `final`, or `sealed`).
-    *   *Is the class part of a closed, enumerable set of subtypes for exhaustive switching?*
-        *   **Yes:** Use `sealed class`.
-    *   *Should the class be completely locked from external extension and implementation?*
-        *   **Yes:** Use `final class`.
-    *   *Does the class contain only a single abstract method (e.g., `call`)?*
-        *   **Yes:** Convert to a `typedef` function type.
-    *   *Does the class contain only static members?*
-        *   **Yes:** Move members to top-level library declarations.
-    *   **STOP AND ASK THE USER:** If the extension/implementation intent of a public class is ambiguous, pause and ask the user to clarify the intended API boundary before applying modifiers.
+- **Properties & Variables**: 
+  - Use noun phrases for non-boolean properties (e.g., `pageCount`, `context.lineWidth`).
+  - Use non-imperative verb phrases for boolean properties (e.g., `isEmpty`, `canClose`). Prefer the "positive" name (e.g., `isConnected` over `isNotDisconnected`).
+- **Methods & Functions**:
+  - Use imperative verb phrases for side-effect-heavy operations (e.g., `list.add()`, `window.refresh()`).
+  - Use noun phrases or non-imperative verb phrases if returning a value is the primary purpose (e.g., `list.elementAt(3)`).
+  - **AVOID** starting method names with `get`. Use a getter or a descriptive verb (e.g., `downloadData()`).
+  - Name methods `to___()` if they copy state to a new object (e.g., `list.toSet()`).
+  - Name methods `as___()` if they return a different representation backed by the original object (e.g., `table.asMap()`).
+- **Type Parameters**: Follow standard mnemonics: `E` (elements), `K`/`V` (key/value), `R` (return type), or `T`/`S`/`U` (single types).
 
-3.  **Enforce Parameter Rules**
-    *   Prefer named parameters for functions with more than two arguments.
-    *   Avoid positional boolean parameters.
-    *   Omit the verb (`is`, `can`, `has`) for named boolean parameters.
-    *   Use inclusive start and exclusive end parameters for ranges.
-    
-    ```dart
-    // GOOD
-    void configure(String name, {bool paused = false, bool growable = true}) {}
-    var sub = items.sublist(0, 3); 
-    
-    // BAD
-    void configure(String name, bool isPaused, bool canGrow) {}
-    ```
+## Class Modifiers & Architecture
 
-4.  **Manage State and Encapsulation**
-    *   Prefer `final` for fields and top-level variables.
-    *   Avoid public fields; use getters and setters for encapsulation.
-    *   Do not define a setter without a corresponding getter.
-    *   Avoid public `late final` fields without initializers (this implicitly exposes a setter).
-    *   Use getters for operations that conceptually access properties (no arguments, returns a result, idempotent, no user-visible side effects).
+Design for extension and encapsulate implementations using Dart 3 class modifiers. Apply modifiers to control external library access.
 
-    ```dart
-    // GOOD
-    class Rectangle {
-      double _width;
-      Rectangle(this._width);
-      
-      double get width => _width;
-      set width(double value) => _width = value;
-      
-      double get area => _width * _width; // Idempotent, no side effects
-    }
-    ```
+- **`abstract`**: Use to define a class that requires concrete implementation of its interface. Cannot be instantiated.
+- **`base`**: Use to enforce inheritance of a class's implementation. Disallows `implements` outside its own library. Guarantees the base class constructor is called.
+- **`interface`**: Use to define a pure interface. Allows `implements` but disallows `extends` outside its library. Reduces the fragile base class problem.
+- **`final`**: Use to close the type hierarchy. Disallows both `extends` and `implements` outside the library. Guarantees safe incremental API changes.
+- **`sealed`**: Use to create a known, enumerable set of subtypes. Enables exhaustive `switch` statements over subtypes. Implicitly abstract.
 
-5.  **Apply Strict Type Annotations**
-    *   Annotate variables without initializers.
-    *   Annotate fields and top-level variables if the type isn't obvious.
-    *   Annotate return types and parameter types on non-local function declarations.
-    *   Do NOT redundantly annotate initialized local variables.
-    *   Do NOT annotate inferred parameter types on function expressions (closures).
-    *   Do NOT type annotate initializing formals (`this.x`).
-    *   Use inline function types over legacy typedefs.
-    *   Use `Future<void>` (not `void` or `Future<Null>`) for async members that do not produce values.
-    *   Avoid `FutureOr<T>` as a return type; return `Future<T>` instead.
+*Note: Combine modifiers where appropriate (e.g., `abstract interface class` for a pure interface).*
 
-    ```dart
-    // GOOD
-    typedef Comparison<T> = int Function(T a, T b);
-    
-    class FilteredObservable {
-      final bool Function(Event) _predicate; // Inline function type
-      FilteredObservable(this._predicate);
-    }
-    ```
+## Members & Encapsulation
 
-6.  **Implement Equality Safely**
-    *   If overriding `==`, you MUST override `hashCode`.
-    *   Ensure `==` is reflexive, symmetric, and transitive.
-    *   Avoid defining custom equality for mutable classes.
-    *   Do not make the parameter to `==` nullable (`Object` instead of `Object?`).
+- **Encapsulation**: AVOID public fields; use getters and setters for encapsulation to control state access and modification.
+- **Getters**: Use getters for operations that conceptually access properties. The operation must take no arguments, return a result, have no user-visible side effects, and be idempotent.
+- **Setters**: Use setters for operations that conceptually change properties. The operation must take a single argument, change state, and be idempotent.
+  - **DON'T** define a setter without a corresponding getter.
+  - **DON'T** specify a return type for a setter (they inherently return `void`).
+- **Method Cascades**: AVOID returning `this` from methods just to enable a fluent interface. Use Dart's cascade operator (`..`) instead.
+- **Equality**: 
+  - DO override `hashCode` if you override `==`.
+  - AVOID defining custom equality for mutable classes.
+  - DON'T make the parameter to `==` nullable (the language handles `null` checks automatically).
 
-    ```dart
-    // GOOD
-    class Person {
-      final String name;
-      Person(this.name);
+## Types & Signatures
 
-      @override
-      bool operator ==(Object other) => other is Person && name == other.name;
+- **Type Aliases**: DO use type aliases (`typedef`) to simplify complex function signatures. Use the modern syntax: `typedef Comparison<T> = int Function(T a, T b);`.
+- **Inline Functions**: PREFER inline function types over typedefs for simple, one-off callbacks (e.g., `void Function(Event) callback`).
+- **Type Annotations**: 
+  - DO type annotate variables without initializers.
+  - DO annotate return types and parameter types on non-local function declarations.
+  - DON'T redundantly type annotate initialized local variables or inferred closure parameters.
+- **Generics**: Write complete generic types. AVOID incomplete generic types (e.g., use `Completer<Map<String, int>>()` instead of `Completer<Map>()`).
+- **Dynamic vs. Object**: AVOID using `dynamic` unless you explicitly want to disable static checking. Use `Object?` to accept any value safely.
+- **Async Returns**: DO use `Future<void>` as the return type of asynchronous members that do not produce values. AVOID using `FutureOr<T>` as a return type (it forces callers to check the type).
 
-      @override
-      int get hashCode => name.hashCode;
-    }
-    ```
+## Parameters
 
-## Constraints
-*   **No Positional Booleans:** Never generate function signatures with positional boolean arguments.
-*   **No Legacy Typedefs:** Never use the `typedef name(args)` syntax. Always use `typedef Name = ReturnType Function(args)`.
-*   **No Faked Overloading:** Do not use runtime type tests (`is`) to fake method overloading. Create distinctly named methods instead.
-*   **No Nullable Collections:** Avoid returning nullable `Future`, `Stream`, or collection types. Return empty collections instead.
-*   **No Fluent `this`:** Avoid returning `this` from methods just to enable a fluent interface; rely on Dart's cascade operator (`..`) instead.
-*   **No Raw Types:** Never write incomplete generic types (e.g., `List numbers = []`). Always specify type arguments or rely on complete inference.
-*   **Related Skills:** `dart-effective-style`, `dart-package-management`.
+- **Named Parameters**: PREFER named parameters for functions with more than two arguments to improve call-site readability.
+- **Boolean Parameters**: AVOID positional boolean parameters. Use named parameters instead.
+  - CONSIDER omitting the 'is/can/has' prefix from named boolean parameters (e.g., use `Isolate.spawn(..., paused: true)` instead of `isPaused: true`).
+- **Optional Positional Parameters**: AVOID optional positional parameters if the user may want to omit earlier parameters. Use named parameters instead.
+- **Ranges**: DO use inclusive `start` and exclusive `end` parameters to accept a range (e.g., `substring(1, 3)`).
+
+## Workflows
+
+### Task Progress: API Design & Implementation
+Copy this checklist to track progress when designing a new Dart class or library API.
+
+- [ ] **Define Class Modifiers**:
+  - [ ] If defining a contract without implementation -> `abstract interface class`.
+  - [ ] If providing implementation that must be inherited -> `base class`.
+  - [ ] If closing the hierarchy to external extension/implementation -> `final class`.
+  - [ ] If defining an enumerable set of states for exhaustive switching -> `sealed class`.
+- [ ] **Encapsulate State**:
+  - [ ] Make internal fields private (`_fieldName`).
+  - [ ] Expose state via getters.
+  - [ ] Expose mutations via setters (ensure a corresponding getter exists).
+- [ ] **Refine Signatures**:
+  - [ ] Convert positional parameters to named parameters if > 2 arguments.
+  - [ ] Convert positional booleans to named booleans (strip `is/can/has` prefixes).
+  - [ ] Extract complex function parameters into `typedef` aliases.
+- [ ] **Verify Types**:
+  - [ ] Ensure no implicit `dynamic` types exist in public signatures.
+  - [ ] Replace `FutureOr<T>` return types with `Future<T>`.
+  - [ ] Ensure async void methods return `Future<void>`.
+- [ ] **Run Validator -> Review Errors -> Fix**:
+  - Run `dart analyze` to catch missing annotations, unhandled sealed class switch cases, and linter violations. Fix all warnings before finalizing the API.

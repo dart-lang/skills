@@ -3,104 +3,119 @@ name: dart-web-development
 description: Build high-performance web apps using modern interop and browser APIs.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:33:50 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:21:00 GMT
 ---
-# dart-web-js-interop
+# Developing Dart Web Applications
 
-## Goal
-Configures Dart web applications for modern JavaScript interoperability using `dart:js_interop` and `package:web`, and manages the build, serve, and test lifecycle using `webdev`. Assumes a standard Dart web environment requiring integration with external JavaScript libraries or browser APIs.
+## Contents
+- [Core Constraints](#core-constraints)
+- [JavaScript Interoperability](#javascript-interoperability)
+- [Web Tooling & Environment](#web-tooling--environment)
+- [Workflows](#workflows)
+- [Examples](#examples)
 
-## Decision Logic
-Evaluate the user's current objective to determine the appropriate action path:
-1. **Project Setup:** If the project lacks web build tools, proceed to dependency configuration.
-2. **JS Binding Creation:** If the user needs to call JS from Dart, implement `@JS` annotations with Extension Types.
-3. **Local Development:** If the user is actively developing, utilize `webdev serve` with hot-reload capabilities.
-4. **Production Deployment:** If the user is preparing for release, utilize `webdev build`.
-5. **Testing:** If the user needs to validate web components, utilize `build_runner test`.
+## Core Constraints
 
-## Instructions
+- **Use `package:web`:** Always prefer `package:web` over the legacy `dart:html`, `dart:js`, or `dart:js_util` libraries.
+- **Avoid `dart:mirrors`:** Never use `dart:mirrors` in web applications, as it is completely unsupported in Dart web compilation.
+- **Use `dart:js_interop`:** Implement all JavaScript interoperability using the `dart:js_interop` library.
+- **Prefer Extension Types:** Define JavaScript interop boundaries and complex JS objects using Dart `extension type` declarations combined with `@JS` annotations.
 
-1. **Configure Web Dependencies**
-   Ensure the project has the required development and web dependencies. Modify `pubspec.yaml` to include `build_runner`, `build_web_compilers`, and `package:web`.
-   ```yaml
-   dependencies:
-     web: ^0.5.0 # Use latest compatible version
+## JavaScript Interoperability
 
-   dev_dependencies:
-     build_runner: ^2.4.0
-     build_web_compilers: ^4.0.0
-     build_test: ^3.0.0 # If testing is required
-   ```
-   Run `dart pub get` to resolve dependencies.
-   *Validate-and-Fix:* If dependency resolution fails, verify SDK constraints in `pubspec.yaml` support Dart 3.3+ (required for modern JS interop).
+Implement JavaScript interoperability to seamlessly integrate JS libraries and browser APIs into Dart web apps.
 
-2. **Implement JavaScript Interoperability**
-   Define JavaScript boundaries using `dart:js_interop` and Extension Types. Do not use legacy `dart:html` or older interop libraries.
-   ```dart
-   import 'dart:js_interop';
-   import 'package:web/web.dart' as web;
+- Annotate libraries or external declarations with `@JS()` to bind them to JavaScript objects.
+- Use `extension type` to wrap `JSObject` or other JS types. This provides a zero-cost abstraction boundary for JS interop.
+- Use specific JS types provided by `dart:js_interop` (e.g., `JSString`, `JSNumber`, `JSObject`, `JSAny`) instead of native Dart types (`String`, `int`) when crossing the interop boundary.
 
-   // Bind to a global JavaScript function
-   @JS('console.log')
-   external void logToConsole(JSAny? obj);
+## Web Tooling & Environment
 
-   // Bind to a JavaScript object/class using Extension Types
-   @JS('MyJSClass')
-   extension type MyDartWrapper._(JSObject _) implements JSObject {
-     external MyDartWrapper(JSString name);
-     
-     external JSString get name;
-     external set name(JSString value);
-     
-     external void doSomething();
-   }
+Manage the development lifecycle, compilation, and testing using `webdev` and `build_runner`.
 
-   void main() {
-     // Example usage interacting with the DOM via package:web
-     final div = web.document.createElement('div') as web.HTMLDivElement;
-     div.text = 'Hello from Dart!';
-     web.document.body?.append(div);
+- **Dependencies:** Ensure `build_runner` and `build_web_compilers` are listed under `dev_dependencies` in the `pubspec.yaml`. If testing, include `build_test`.
+- **Local Development:** Use `webdev serve` to launch a development server. This utilizes the development compiler, supporting incremental updates and fast refresh.
+- **Debugging:** Append the `--debug` flag to `webdev serve` to enable Dart DevTools.
+- **Production Build:** Use `webdev build` to generate a minified, deployable JavaScript application.
 
-     // Example usage of custom JS interop
-     final myObj = MyDartWrapper('Test'.toJS);
-     myObj.doSomething();
-   }
-   ```
+## Workflows
 
-3. **Initialize Local Development Server**
-   **STOP AND ASK THE USER:** "Do you need to run the development server on a specific port, or enable Dart DevTools debugging?"
-   If standard development is requested, start the server using `webdev`:
-   ```bash
-   # Standard serve (defaults to localhost:8080)
-   webdev serve
+### Workflow: Setting up a Dart Web Project
 
-   # Serve with Dart DevTools enabled
-   webdev serve --debug
+Copy and complete this checklist when initializing or configuring a Dart web project:
 
-   # Serve on a custom port
-   webdev serve web:8083
-   ```
+- [ ] Add required dev dependencies: `dart pub add build_runner build_web_compilers --dev`
+- [ ] Add `package:web` dependency: `dart pub add web`
+- [ ] Install webdev globally: `dart pub global activate webdev`
+- [ ] Verify `pubspec.yaml` contains the correct dependencies.
+- [ ] Run `dart pub get` to synchronize dependencies.
 
-4. **Execute Production Build**
-   Compile the application for production deployment. This generates minified JavaScript.
-   ```bash
-   # Build the 'web' directory into the 'build' directory
-   webdev build --output web:build
-   ```
-   *Validate-and-Fix:* Inspect the output directory. If the build fails due to missing builders, ensure `build_web_compilers` is correctly listed in `dev_dependencies`.
+### Workflow: Implementing JS Interop
 
-5. **Run Web Tests**
-   Execute component or unit tests in a browser environment.
-   ```bash
-   # Run tests on the Chrome platform
-   dart run build_runner test -- -p chrome
-   ```
+Follow this sequence when binding a new JavaScript library or object:
 
-## Constraints
-* DO NOT use `dart:html`, `dart:js`, or `dart:js_util`. Strictly use `package:web` and `dart:js_interop`.
-* DO NOT use `dart:mirrors` under any circumstances; it is unsupported in Dart web applications.
-* MUST use `extension type` for defining complex JavaScript object bindings.
-* MUST annotate external JS declarations with `@JS()`.
-* MUST convert Dart types to JS types explicitly (e.g., `'string'.toJS`) when passing arguments to JS interop functions.
-* Related Skills: `dart-migration-versioning`, `dart-compilation-deployment`.
+- [ ] Import `dart:js_interop`.
+- [ ] Add the `@JS()` annotation to the library or specific external function/class.
+- [ ] Define the JS object boundary using `extension type Name._(JSObject _) implements JSObject`.
+- [ ] Declare `external` methods and properties inside the extension type, using `dart:js_interop` types (e.g., `JSString`).
+- [ ] Run validator -> review compilation errors -> fix type mismatches between Dart and JS types.
+
+### Workflow: Compiling and Serving
+
+Apply conditional logic based on the deployment target:
+
+- **If developing locally:**
+  - [ ] Run `webdev serve` (default port 8080).
+  - [ ] For DevTools, run `webdev serve --debug`.
+- **If testing:**
+  - [ ] Run `dart run build_runner test -- -p chrome`.
+- **If building for production:**
+  - [ ] Run `webdev build --output web:build` to compile the `web` directory into the `build` directory.
+
+## Examples
+
+### High-Fidelity JS Interop Implementation
+
+This example demonstrates the correct usage of `dart:js_interop`, `package:web`, and extension types to bind a hypothetical JavaScript `UserAuth` object.
+
+```dart
+@JS()
+library user_auth_interop;
+
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
+
+// Bind to a global JavaScript function
+@JS('console.log')
+external void _log(JSAny? message);
+
+// Define the JS interop boundary using an extension type
+@JS('UserAuth')
+extension type UserAuth._(JSObject _) implements JSObject {
+  // External constructor
+  external UserAuth(JSString apiKey);
+
+  // External properties using JS types
+  external JSString get currentUser;
+  external set currentUser(JSString value);
+
+  // External methods
+  external void login(JSString username, JSString password);
+  external JSBoolean isLoggedIn();
+}
+
+void main() {
+  // Interact with the DOM using package:web
+  final web.HTMLDivElement appDiv = web.document.querySelector('#app') as web.HTMLDivElement;
+  appDiv.text = 'Initializing Auth...';
+
+  // Instantiate and use the JS interop object
+  final auth = UserAuth('api_key_123'.toJS);
+  auth.login('admin'.toJS, 'password'.toJS);
+
+  if (auth.isLoggedIn().toDart) {
+    _log('User logged in successfully!'.toJS);
+    appDiv.text = 'Welcome, ${auth.currentUser.toDart}';
+  }
+}
+```

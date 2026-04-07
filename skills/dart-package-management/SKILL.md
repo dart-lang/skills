@@ -3,109 +3,133 @@ name: dart-package-management
 description: Structure packages and manage dependencies using the pub ecosystem.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:32:01 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:19:51 GMT
 ---
-# Dart Package Management
+# Managing Dart Packages
 
-## Goal
-Configures and manages Dart packages, monorepo workspaces, and directory layouts. Enforces `pubspec.yaml` standards, dependency resolution, and strict public/private API boundaries. Assumes a modern Dart environment (SDK >= 3.6.0) utilizing the official package layout conventions and workspace features for multi-package repositories.
+## Contents
+- [Package Layout Conventions](#package-layout-conventions)
+- [Pubspec Configuration](#pubspec-configuration)
+- [Monorepo Workspaces](#monorepo-workspaces)
+- [Workflows](#workflows)
+- [Examples](#examples)
 
-## Instructions
+## Package Layout Conventions
 
-1. **Determine Repository Architecture**
-   Evaluate the user's project scope using the following Decision Logic:
-   * *Is the project a single standalone package?* -> Proceed to Step 2a (Standard Package).
-   * *Does the project contain multiple interdependent packages?* -> Proceed to Step 2b (Monorepo Workspace).
-   * **STOP AND ASK THE USER:** If the repository structure is ambiguous, ask: "Should this project be configured as a single Dart package or a monorepo workspace containing multiple packages?"
+Structure Dart packages using standardized directories to ensure tooling compatibility and clear API boundaries.
 
-2. **Configure `pubspec.yaml`**
-   Based on the architecture decision, generate the appropriate configuration files.
+- **`lib/`**: Place public libraries and assets here. Export only the public API surface.
+- **`lib/src/`**: Place internal implementation files here. Never import from another package's `lib/src/`. Use relative imports within your own package when importing from `lib/src/` to `lib/`.
+- **`bin/`**: Place public command-line executables here.
+- **`tool/`**: Place internal scripts and tools (e.g., code generation, documentation scripts) here.
+- **`test/`**: Place unit tests here, suffixed with `_test.dart`.
+- **`integration_test/`**: Place slow, integration-level tests here.
+- **`example/`**: Place standalone example programs demonstrating package usage. Use `package:` imports to reference the parent package.
+- **`web/`**: Place web-specific entrypoints (`main.dart`) and assets (`index.html`, CSS) here.
+- **`hook/`**: Place SDK build hooks (e.g., `build.dart`) here.
 
-   *Step 2a: Standard Package*
-   Create a standard `pubspec.yaml` at the project root.
-   ```yaml
-   name: package_name
-   description: >-
-     A concise description of the package (60-180 characters).
-   version: 1.0.0
-   homepage: https://example.com/package_name
-   environment:
-     sdk: ^3.6.0
-   dependencies:
-     path: ^1.9.0
-   dev_dependencies:
-     test: ^2.4.0
-   ```
+## Pubspec Configuration
 
-   *Step 2b: Monorepo Workspace*
-   Create a root `pubspec.yaml` to define the workspace. Use glob patterns (`*`) to automatically include sub-packages.
-   ```yaml
-   name: root_workspace
-   publish_to: none
-   environment:
-     sdk: ^3.6.0
-   workspace:
-     - packages/*
-   ```
-   For each child package (e.g., `packages/client_package/pubspec.yaml`), enforce the `resolution: workspace` directive and ensure the SDK constraint matches the root.
-   ```yaml
-   name: client_package
-   description: Client implementation for the workspace.
-   version: 0.1.0
-   environment:
-     sdk: ^3.6.0
-   resolution: workspace
-   dependencies:
-     shared_package: ^1.0.0 # Resolves locally within the workspace
-   ```
+Maintain a valid `pubspec.yaml` at the root of every package. 
 
-3. **Scaffold Package Layout**
-   Enforce the standard Dart directory structure. Create the following directories and files as needed:
-   * `lib/`: Publicly exported libraries and assets.
-   * `lib/src/`: Private implementation files.
-   * `bin/`: Public command-line executables.
-   * `tool/`: Internal development scripts.
-   * `test/`: Unit and integration tests.
-   * `example/`: Usage examples.
+- **Version Constraints**: Use caret syntax (`^`) for dependency version constraints (e.g., `^3.2.0`) to allow non-breaking updates.
+- **SDK Constraints**: Always define an `environment` with a lower-bound SDK constraint.
+- **Public Assets**: Explicitly list all public assets (images, fonts) required by the package.
+- **Executables**: Map scripts from `bin/` to command names under the `executables` field.
+- **Metadata**: Include `name`, `version`, `description`, `repository`, and `issue_tracker` for published packages.
+- **Topics**: Categorize published packages using the `topics` field (max 5 topics, lowercase alphanumeric and hyphens).
+- **False Secrets**: Use the `false_secrets` field with gitignore patterns to prevent false positives during pub's pre-publish leak detection.
 
-4. **Implement Import Boundaries**
-   Apply strict import rules based on file location.
-   * *Within `lib/` reaching into `lib/src/`:* Use relative imports.
-     ```dart
-     // lib/my_package.dart
-     import 'src/internal_logic.dart';
-     ```
-   * *Outside `lib/` (e.g., `test/`, `bin/`, `example/`) reaching into `lib/src/`:* Use `package:` imports.
-     ```dart
-     // test/my_package_test.dart
-     import 'package:my_package/src/internal_logic.dart';
-     ```
+## Monorepo Workspaces
 
-5. **Manage Dependencies and State**
-   Execute package resolution commands to generate the `package_config.json` and `pubspec.lock` files.
-   ```bash
-   # For initial setup or adding new dependencies
-   dart pub get
+Implement workspaces in monorepos to share dependencies across local packages, reducing memory usage and ensuring version consistency. 
 
-   # To upgrade existing dependencies to their latest compatible versions
-   dart pub upgrade
-   ```
+- **Root Pubspec**: Define the workspace at the repository root. Set `publish_to: none`, require SDK `^3.6.0` or higher, and use the `workspace` field with glob patterns (e.g., `packages/*`).
+- **Child Pubspecs**: In each workspace package, require SDK `^3.6.0` or higher and set `resolution: workspace`.
+- **Interdependencies**: Depend on other workspace packages normally. Pub automatically resolves to the local workspace version.
+- **Overrides**: Place `dependency_overrides` in the root `pubspec.yaml` to apply them globally across the workspace.
 
-6. **Validate and Fix**
-   Verify the configuration state.
-   * Run `dart pub workspace list` (if in a monorepo) to ensure all child packages are recognized.
-   * Run `dart analyze` to catch import boundary violations (`avoid_relative_lib_imports`).
-   * If `dart pub get` fails due to a stray `pubspec.yaml` in a non-workspace directory, delete the stray file or add it to the `workspace:` list, then re-run `dart pub get`.
+## Workflows
 
-## Constraints
+### Setting up a Monorepo Workspace
 
-* DO maintain a valid `pubspec.yaml` with clear version constraints (prefer `^` syntax, e.g., `^2.1.0`).
-* DO follow the `lib/` directory convention for public exports; never place entrypoints (`main()`) directly in `lib/`.
-* DO use `dart pub get` and `dart pub upgrade` to manage the `.dart_tool/package_config.json`.
-* DO implement workspaces in monorepos to share dependencies across local packages.
-* DO ensure all public assets (e.g., CSS, images) are listed correctly in the pubspec or placed in the top-level `lib/` directory for web/asset sharing.
-* DO NOT check the `.dart_tool/` directory into source control; ensure it is added to `.gitignore`.
-* DO NOT use `resolution: workspace` on packages with an SDK constraint lower than `^3.6.0`.
-* DO NOT import from another package's `lib/src/` directory under any circumstances.
-* Related Skills: `dart-api-design`.
+Use this checklist to convert a standard repository into a Dart workspace.
+
+- [ ] Create a root `pubspec.yaml`.
+- [ ] Set `publish_to: none` and `environment: sdk: ^3.6.0` in the root pubspec.
+- [ ] Add the `workspace:` field to the root pubspec using glob patterns (e.g., `- packages/*`).
+- [ ] Update all child `pubspec.yaml` files to include `environment: sdk: ^3.6.0` (or higher).
+- [ ] Add `resolution: workspace` to all child `pubspec.yaml` files.
+- [ ] Run `dart pub get` at the repository root.
+- [ ] **Feedback Loop**: Run validator -> review errors -> fix. Ensure no stray `pubspec.lock` or `.dart_tool/package_config.json` files exist in child directories. If resolution fails, align conflicting dependency versions across child packages.
+
+### Managing Dependencies
+
+- [ ] Run `dart pub get` to fetch dependencies and generate the `package_config.json`.
+- [ ] Run `dart pub upgrade` to update dependencies to their latest compatible versions.
+- [ ] Commit `pubspec.lock` ONLY for application packages. Omit it for library packages.
+
+## Examples
+
+### Standard Library Pubspec
+
+```yaml
+name: enchilada
+description: A comprehensive toolkit for newt transmogrification.
+version: 1.2.3
+repository: https://github.com/example/enchilada
+issue_tracker: https://github.com/example/enchilada/issues
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  path: ^1.8.0
+  transmogrify: ^0.4.0
+
+dev_dependencies:
+  test: ^2.0.0
+  lints: ^3.0.0
+
+executables:
+  enchilada: main
+
+topics:
+  - transmogrification
+  - utilities
+```
+
+### Workspace Root Pubspec
+
+```yaml
+name: my_monorepo
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/*
+
+# Apply overrides globally across all workspace packages
+dependency_overrides:
+  transmogrify: ^0.5.0-dev
+```
+
+### Workspace Child Pubspec
+
+```yaml
+name: client_package
+description: The client application for the monorepo.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  shared_package: ^1.0.0 # Resolves locally within the workspace
+  http: ^1.1.0
+```
