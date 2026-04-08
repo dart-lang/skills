@@ -3,65 +3,95 @@ name: dart-concurrency-isolates
 description: Offload heavy computation to isolates to keep the main thread responsive.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:31:33 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:19:26 GMT
 ---
-# dart-isolates-concurrency
+# Managing Dart Concurrency and Isolates
 
-## Goal
-Implements concurrent execution in Dart using isolates to offload heavy computations from the main thread. Manages both short-lived background tasks and long-lived bidirectional worker isolates while ensuring memory safety, proper port management, and strict resource cleanup. Assumes a Dart Native environment (isolates are not supported on Dart Web).
+## Contents
+- [Core Guidelines](#core-guidelines)
+- [Choosing the Right Isolate Strategy](#choosing-the-right-isolate-strategy)
+- [Implementing One-Off Tasks](#implementing-one-off-tasks)
+- [Implementing Long-Running Workers](#implementing-long-running-workers)
+- [Workflows](#workflows)
+- [Examples](#examples)
 
-## Instructions
+## Core Guidelines
 
-### 1. Determine Isolate Strategy (Decision Logic)
-Evaluate the user's concurrency requirements using the following decision tree:
-*   **Condition A:** Is the task a single, one-off computation (e.g., parsing a single large JSON file)?
-    *   *Action:* Use `Isolate.run()`.
-*   **Condition B:** Does the task require repeated executions, maintaining state, or streaming multiple messages over time?
-    *   *Action:* Use `Isolate.spawn()` with manual `ReceivePort` and `SendPort` management.
+- **Isolate Memory:** Assume zero shared memory between isolates. Isolates communicate exclusively via message passing.
+- **Data Transfer:** Avoid passing large mutable objects between isolates. Prefer simple data types or immutable records to minimize serialization overhead.
+- **Resource Management:** Always ensure isolates and ports are terminated when no longer needed to prevent memory leaks.
+- **Platform Limitations:** Do not use isolates on the Dart Web platform. Web compiles to JavaScript, which uses Web Workers instead.
+- **Related Skills:** Refer to `dart-async-programming` for standard asynchronous operations (`Future`, `Stream`, `async`/`await`) running on the Main Isolate.
 
-**STOP AND ASK THE USER:** "Are you executing a one-off background task, or do you need a long-running worker that handles multiple messages over time?"
+## Choosing the Right Isolate Strategy
 
-### 2. Implement Short-Lived Isolates (`Isolate.run`)
-For simple background tasks, use `Isolate.run()` to automatically handle spawning, message transfer, error handling, and termination.
+Apply conditional logic to determine the correct isolate implementation:
+
+- **If executing a simple, one-off background task** (e.g., parsing a single large JSON payload, compressing a file): Use `Isolate.run()`.
+- **If executing complex, long-running background workers** (e.g., continuous data processing, maintaining a persistent database connection): Use `Isolate.spawn()` and manually manage `SendPort` and `ReceivePort`.
+
+## Implementing One-Off Tasks
+
+Use `Isolate.run()` to spawn an isolate, execute a function, capture the result, and automatically terminate the isolate.
+
+1. Pass a top-level function, static method, or closure to `Isolate.run()`.
+2. Await the result in the Main Isolate.
 
 ```dart
-import 'dart:convert';
-import 'dart:io';
-import 'dart:isolate';
-
-Future<Map<String, dynamic>> parseLargeJson(String filePath) async {
-  // Isolate.run spawns the isolate, runs the closure, returns the result, and exits.
-  return await Isolate.run(() async {
-    final fileData = await File(filePath).readAsString();
-    return jsonDecode(fileData) as Map<String, dynamic>;
-  });
+Future<Map<String, dynamic>> parseLargeJson(String jsonString) async {
+  // Spawns isolate, runs decode, returns result, and terminates automatically.
+  return await Isolate.run(() => jsonDecode(jsonString) as Map<String, dynamic>);
 }
 ```
 
-### 3. Implement Long-Lived Isolates (`Isolate.spawn`)
-For complex workers, establish a robust 2-way communication channel. You must implement message sequencing (using IDs), error handling (`RemoteError`), and lifecycle management.
+## Implementing Long-Running Workers
 
-**Step 3a: Define the Worker Class and Spawning Logic**
-Use a `RawReceivePort` to separate startup logic from message handling.
+Manually manage `SendPort` and `ReceivePort` to establish two-way communication for long-lived worker isolates.
+
+1. **Initialize with `RawReceivePort`:** Use `RawReceivePort` in the Main Isolate to separate startup logic from ongoing message handling.
+2. **Establish Two-Way Communication:** Pass the Main Isolate's `SendPort` to the Worker Isolate via `Isolate.spawn()`. The Worker Isolate must create its own `ReceivePort` and send its `SendPort` back to the Main Isolate.
+3. **Map Requests to Responses:** Use a `Completer` map with unique IDs to track asynchronous requests sent to the Worker Isolate and resolve them when the response is received.
+4. **Handle Errors:** Catch exceptions in the Worker Isolate and send them back as `RemoteError` objects.
+5. **Teardown:** Send a specific shutdown message to the Worker Isolate to close its `ReceivePort`, and close the Main Isolate's `ReceivePort` when all active requests are completed.
+
+## Workflows
+
+### Task Progress: Long-Running Worker Setup
+Copy this checklist to track progress when implementing a long-running worker isolate:
+
+- [ ] Create a `Worker` class to encapsulate isolate management.
+- [ ] Implement a static `spawn()` method using `RawReceivePort` to capture the initial `SendPort` from the worker.
+- [ ] Call `Isolate.spawn()`, passing the `RawReceivePort.sendPort` and the worker entrypoint method.
+- [ ] Implement the worker entrypoint method (`_startRemoteIsolate`).
+- [ ] Create a `ReceivePort` inside the worker and send its `SendPort` back to the Main Isolate.
+- [ ] Set up a listener on the worker's `ReceivePort` to process incoming commands.
+- [ ] Set up a listener on the Main Isolate's `ReceivePort` to process responses and resolve `Completer` instances.
+- [ ] Implement a `close()` method to send a shutdown command and close all ports.
+- [ ] Run validator -> review errors -> fix (Ensure no memory leaks and all ports close cleanly).
+
+## Examples
+
+### Robust Long-Running Worker Implementation
+
+Use this pattern for robust, two-way communication with a long-running worker isolate.
 
 ```dart
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 
-class BackgroundWorker {
+class JsonWorker {
   final SendPort _commands;
   final ReceivePort _responses;
   final Map<int, Completer<Object?>> _activeRequests = {};
   int _idCounter = 0;
   bool _closed = false;
 
-  BackgroundWorker._(this._responses, this._commands) {
+  JsonWorker._(this._responses, this._commands) {
     _responses.listen(_handleResponsesFromIsolate);
   }
 
-  static Future<BackgroundWorker> spawn() async {
+  static Future<JsonWorker> spawn() async {
     final initPort = RawReceivePort();
     final connection = Completer<(ReceivePort, SendPort)>.sync();
     
@@ -81,14 +111,31 @@ class BackgroundWorker {
     }
 
     final (ReceivePort receivePort, SendPort sendPort) = await connection.future;
-    return BackgroundWorker._(receivePort, sendPort);
+    return JsonWorker._(receivePort, sendPort);
   }
-```
 
-**Step 3b: Implement the Remote Isolate Entrypoint**
-Define the static method that runs on the spawned isolate.
+  Future<Object?> parseJson(String message) async {
+    if (_closed) throw StateError('Worker is closed');
+    final completer = Completer<Object?>.sync();
+    final id = _idCounter++;
+    _activeRequests[id] = completer;
+    _commands.send((id, message));
+    return await completer.future;
+  }
 
-```dart
+  void _handleResponsesFromIsolate(dynamic message) {
+    final (int id, Object? response) = message as (int, Object?);
+    final completer = _activeRequests.remove(id)!;
+
+    if (response is RemoteError) {
+      completer.completeError(response);
+    } else {
+      completer.complete(response);
+    }
+
+    if (_closed && _activeRequests.isEmpty) _responses.close();
+  }
+
   static void _startRemoteIsolate(SendPort sendPort) {
     final receivePort = ReceivePort();
     sendPort.send(receivePort.sendPort);
@@ -99,78 +146,22 @@ Define the static method that runs on the spawned isolate.
         return;
       }
       
-      final (int id, String payload) = message as (int, String);
+      final (int id, String jsonText) = message as (int, String);
       try {
-        // Perform heavy computation here
-        final result = jsonDecode(payload);
-        sendPort.send((id, result));
+        final jsonData = jsonDecode(jsonText);
+        sendPort.send((id, jsonData));
       } catch (e) {
         sendPort.send((id, RemoteError(e.toString(), '')));
       }
     });
   }
-```
 
-**Step 3c: Implement Message Passing and Response Handling**
-Map outgoing messages to `Completer` instances using unique IDs.
-
-```dart
-  Future<Object?> executeTask(String payload) async {
-    if (_closed) throw StateError('Worker is closed');
-    
-    final completer = Completer<Object?>.sync();
-    final id = _idCounter++;
-    _activeRequests[id] = completer;
-    
-    _commands.send((id, payload));
-    return await completer.future;
-  }
-
-  void _handleResponsesFromIsolate(dynamic message) {
-    final (int id, Object? response) = message as (int, Object?);
-    final completer = _activeRequests.remove(id);
-    
-    if (completer == null) return;
-
-    if (response is RemoteError) {
-      completer.completeError(response);
-    } else {
-      completer.complete(response);
-    }
-
-    if (_closed && _activeRequests.isEmpty) {
-      _responses.close();
-    }
-  }
-```
-
-**Step 3d: Implement Graceful Shutdown**
-Ensure ports are closed to prevent memory leaks.
-
-```dart
   void close() {
     if (!_closed) {
       _closed = true;
       _commands.send('shutdown');
-      if (_activeRequests.isEmpty) {
-        _responses.close();
-      }
+      if (_activeRequests.isEmpty) _responses.close();
     }
   }
 }
 ```
-
-### 4. Validate and Fix
-After generating isolate code, perform the following validation loop:
-1.  **Check Port Closure:** Verify that `ReceivePort.close()` is called in both the main isolate and the worker isolate during shutdown.
-2.  **Check Payload Types:** Ensure the data being sent through `SendPort.send()` does not contain native resources (e.g., `Socket`, `Pointer`, `ReceivePort`).
-3.  **Fix:** If native resources are being passed, refactor the payload to extract and send only primitive data types or serializable maps/records.
-
-## Constraints
-*   DO use `Isolate.run()` for simple one-off background tasks.
-*   DO manually manage `SendPort` and `ReceivePort` for complex, long-running background workers.
-*   AVOID passing large mutable objects between isolates; prefer simple data types and records.
-*   DO ensure isolates are terminated when no longer needed to free resources.
-*   DO NOT attempt to use isolates on the Dart Web platform (use web workers instead).
-*   DO NOT use shared-state concurrency patterns (e.g., mutexes); isolates communicate strictly via message passing.
-*   Related Skills: `dart-async-programming`.

@@ -3,113 +3,110 @@ name: dart-effective-style
 description: Maintain code consistency by following official Dart style and naming conventions.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:28:16 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:16:30 GMT
 ---
-# dart-style-guide
+# Styling Dart Code
 
-## Goal
-Applies idiomatic Dart styling, naming conventions, and formatting rules to ensure consistent, readable, and maintainable code across Dart and Flutter projects. Assumes a standard Dart SDK environment where the `dart` CLI is available.
+## Contents
+- [Naming Conventions](#naming-conventions)
+- [Ordering Directives](#ordering-directives)
+- [Formatting Rules](#formatting-rules)
+- [Workflows](#workflows)
 
-## Instructions
+## Naming Conventions
 
-1. **Apply Naming Conventions**
-   Ensure all identifiers match Dart's official style guidelines. Use the Decision Logic section below to determine the correct casing for any given identifier.
+Apply the following naming conventions strictly to maintain consistency across the Dart ecosystem. 
 
-2. **Order Directives**
-   Organize all imports and exports at the top of the file in the following strict order, separated by blank lines, and sorted alphabetically within each group:
-   * `dart:` imports.
-   * `package:` imports.
-   * Relative imports.
-   * `export` directives.
+- **Types:** Name classes, enum types, typedefs, extensions, and type parameters using `UpperCamelCase`.
+- **Variables & Members:** Name class members, top-level definitions, variables, parameters, and named parameters using `lowerCamelCase`.
+- **Constants:** Prefer `lowerCamelCase` for constant variables, including enum values. 
+  - *Conditional:* If editing existing code that uses `SCREAMING_CAPS` or working with generated code (e.g., protobufs), maintain consistency with the existing style.
+- **Files & Directories:** Name packages, directories, and source files using `lowercase_with_underscores`.
+- **Import Prefixes:** Name import prefixes using `lowercase_with_underscores`.
+- **Acronyms:** Capitalize acronyms and abbreviations longer than two letters like regular words (e.g., `Http`, `Uri`). Keep two-letter acronyms fully capitalized (e.g., `ID`, `UI`). If an abbreviation begins a `lowerCamelCase` identifier, make it entirely lowercase (e.g., `httpConnection`).
+- **Privacy:** Use a leading underscore `_` for members and top-level declarations to indicate library privacy. Do not use leading underscores for local variables, parameters, local functions, or library prefixes.
+- **Unused Parameters:** Prefer using wildcards (`_`, `__`, etc.) for unused callback parameters to explicitly signal intent.
+- **Prefixes:** Do not use prefix letters (e.g., Hungarian notation like `kDefaultTimeout`).
+- **Libraries:** Do not explicitly name libraries (e.g., avoid `library my_library;`).
 
-   ```dart
-   import 'dart:async';
-   import 'dart:collection';
+### Examples
 
-   import 'package:bar/bar.dart';
-   import 'package:foo/foo.dart';
+```dart
+// GOOD
+class SliderMenu {}
+typedef Predicate<T> = bool Function(T value);
+const defaultTimeout = 1000;
+var httpConnection = connect();
 
-   import 'util.dart';
+futureOfVoid.then((_) {
+  print('Operation complete.');
+});
 
-   export 'src/error.dart';
-   ```
+// BAD
+class slider_menu {}
+const DEFAULT_TIMEOUT = 1000;
+var HTTPConnection = connect();
+const kDefaultTimeout = 1000;
+```
 
-3. **Format Code**
-   Always format the code using the official Dart formatter. If the formatter produces hard-to-read code, refactor the code (e.g., extract variables) to be more formatter-friendly.
-   ```bash
-   dart format .
-   ```
+## Ordering Directives
 
-4. **Enforce Flow Control Braces**
-   Always use curly braces for flow control statements to prevent the dangling else problem.
-   ```dart
-   // GOOD
-   if (isWeekDay) {
-     print('Bike to work!');
-   } else {
-     print('Go dancing or read a book!');
-   }
+Organize file preambles using the following strict order. Separate each section with a blank line and sort directives alphabetically within each section.
 
-   // ACCEPTABLE (Single line, no else)
-   if (arg == null) return defaultValue;
-   ```
+1. Place `dart:` imports first.
+2. Place `package:` imports second.
+3. Place relative imports third.
+   - *Best Practice:* Prefer relative imports for files located inside the `lib` directory of the same package.
+4. Specify `export` directives in a separate section after all imports.
 
-5. **Handle Unused Callback Parameters**
-   Use wildcards (`_`) for unused callback parameters to signal intent.
-   ```dart
-   futureOfVoid.then((_) {
-     print('Operation complete.');
-   });
+### Example
 
-   // Multiple unused parameters
-   .onError((_, __) {
-     print('Operation failed.');
-   });
-   ```
+```dart
+// GOOD
+import 'dart:async';
+import 'dart:collection';
 
-## Decision Logic
+import 'package:bar/bar.dart';
+import 'package:foo/foo.dart';
 
-When creating or renaming an identifier, follow this flowchart logic:
+import 'src/util.dart';
 
-* **Is it a Class, Enum, Typedef, Extension, or Type Parameter?**
-  * **Yes:** Use `UpperCamelCase`.
-    ```dart
-    class SliderMenu {}
-    typedef Predicate<T> = bool Function(T value);
-    extension SmartIterable<T> on Iterable<T> {}
-    ```
-* **Is it a Package, Directory, Source File, or Import Prefix?**
-  * **Yes:** Use `lowercase_with_underscores`.
-    ```dart
-    import 'dart:math' as math;
-    import 'package:js/js.dart' as js;
-    // File: slider_menu.dart
-    ```
-* **Is it a Constant Variable or Enum Value?**
-  * **Yes:** Use `lowerCamelCase` (Do NOT use `SCREAMING_CAPS` unless matching legacy code).
-    ```dart
-    const pi = 3.14;
-    const defaultTimeout = 1000;
-    ```
-* **Is it a Variable, Parameter, Named Parameter, Class Member, or Top-Level Definition?**
-  * **Yes:** Use `lowerCamelCase`.
-    ```dart
-    var count = 3;
-    HttpRequest httpRequest;
-    ```
-* **Does the name contain an Acronym or Abbreviation?**
-  * **Is it longer than two letters?** Capitalize it like a normal word (e.g., `Http`, `Uri`).
-  * **Is it exactly two letters?** Keep both capitalized (e.g., `ID`, `TV`) *unless* it is the start of a `lowerCamelCase` identifier, in which case both are lowercase (e.g., `idToken`, `tvSet`).
-* **Is the member or top-level declaration meant to be private to its library?**
-  * **Yes:** Prefix it with a leading underscore `_`.
-  * **No:** Do NOT use a leading underscore. (Never use leading underscores for local variables or parameters).
+export 'src/error.dart';
+```
 
-## Constraints
+## Formatting Rules
 
-* **Mandatory Formatting:** DO run `dart format` as a mandatory step before committing or finalizing any code changes.
-* **Import Preferences:** PREFER relative imports for files located inside the `lib` directory of the same package.
-* **No Prefix Letters:** DON'T use prefix letters (like Hungarian notation). Use `defaultTimeout`, not `kDefaultTimeout`.
-* **No Explicit Library Names:** DON'T explicitly name libraries (e.g., avoid `library my_library;`). Use `library;` if a directive is needed for annotations.
-* **Line Length:** PREFER lines 80 characters or fewer. **STOP AND ASK THE USER:** if a specific string or configuration requires exceeding the 80-character limit and cannot be reasonably refactored.
-* **Related Skills:** `dart-static-analysis`, `dart-api-design`.
+- **Mandatory Formatting:** Run `dart format` as a mandatory step before committing any code. The official whitespace-handling rules for Dart are defined entirely by what `dart format` produces.
+- **Line Length:** Prefer lines of 80 characters or fewer. Reorganize deeply nested expressions or extract variables if `dart format` produces unreadable output due to line length constraints.
+- **Flow Control:** Use curly braces for all flow control statements to avoid the dangling else problem.
+  - *Exception:* You may omit braces for an `if` statement with no `else` clause if the entire statement fits on a single line.
+
+### Example
+
+```dart
+// GOOD
+if (isWeekDay) {
+  print('Bike to work!');
+} else {
+  print('Go dancing or read a book!');
+}
+
+if (arg == null) return defaultValue;
+
+// BAD
+if (overflowChars != other.overflowChars)
+  return overflowChars < other.overflowChars;
+```
+
+## Workflows
+
+### Pre-Commit Formatting & Linting Workflow
+
+Execute this workflow before finalizing any Dart code modifications to ensure style compliance.
+
+- [ ] **Task Progress**
+  - [ ] 1. Review code against naming conventions (e.g., `UpperCamelCase` for types, `lowerCamelCase` for variables).
+  - [ ] 2. Verify import ordering (`dart:` -> `package:` -> relative -> exports).
+  - [ ] 3. Run `dart format .` on the modified files.
+  - [ ] 4. Run `dart analyze` to catch static analysis and linting errors.
+  - [ ] 5. Run validator -> review errors -> fix any issues reported by the analyzer.

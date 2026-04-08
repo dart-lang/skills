@@ -3,90 +3,106 @@ name: dart-migration-versioning
 description: Manage language versioning and perform large-scale codebase upgrades.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:35:09 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:22:14 GMT
 ---
-# Dart Version Management and Migration
+# Managing Dart Language Versions
 
-## Goal
-Manages Dart language versioning, resolves breaking changes during SDK upgrades, and applies per-library version overrides to facilitate gradual migrations. Assumes a standard Dart or Flutter environment with access to `pubspec.yaml` and source files. Related Skills: `dart-web-development`, `dart-static-analysis`.
+## Contents
+- [Core Guidelines](#core-guidelines)
+- [Configuration & Overrides](#configuration--overrides)
+- [Workflows](#workflows)
+- [Examples](#examples)
+- [Breaking Changes Reference](#breaking-changes-reference)
+- [Related Skills](#related-skills)
 
-## Decision Logic
-When tasked with upgrading a Dart project or fixing version-related compilation errors, follow this evaluation path:
-1. **Identify Target SDK:** Determine the target Dart SDK version.
-2. **Check Current Version:** Read `pubspec.yaml` to find the current lower bound SDK constraint.
-3. **Evaluate Breaking Changes:** Cross-reference the version jump with the breaking changes log.
-   - *If migrating to >= 3.0.0:* Sound null safety is strictly enforced.
-   - *If migrating web libraries to >= 3.3.0:* Legacy `dart:html` and `dart:js` are deprecated/removed.
-4. **Determine Migration Strategy:**
-   - *Can the code be refactored immediately?* -> Apply API migrations.
-   - *Is the refactor too large or blocked?* -> Pin specific files using `@dart = <version>` to maintain older language semantics while upgrading the package.
+## Core Guidelines
 
-## Instructions
+- **Check current language version requirements** in `pubspec.yaml` before initiating any migration or refactoring.
+- **Consult breaking change logs** before performing major dependency or SDK upgrades.
+- **Use `@dart = <version>`** to pin specific files to older versions during gradual migrations (e.g., migrating a large project to a new language feature like sound null safety).
+- **Understand Version Derivation**: The default language version for a package is strictly determined by the **lower bound** of the SDK constraint in `pubspec.yaml`. Patch versions do not introduce new language features.
 
-1. **Verify Current Language Version Requirements**
-   Inspect the `pubspec.yaml` file to determine the default language version, which is dictated by the lower bound of the SDK constraint.
-   ```yaml
-   environment:
-     sdk: '>=2.18.0 <3.0.0' # Defaults to Dart 2.18
-   ```
+## Configuration & Overrides
 
-2. **Consult Breaking Change Logs**
-   Before performing major dependency or SDK upgrades, review the breaking changes for the target version. 
-   **STOP AND ASK THE USER:** "I am about to upgrade the SDK constraint to `<target_version>`. This includes breaking changes such as `<list_key_changes>`. Should I proceed with the upgrade and begin refactoring?"
+### Global Package Versioning
+Set the default language version for the entire package by modifying the `environment.sdk` constraint in `pubspec.yaml`. 
 
-3. **Apply Per-Library Language Version Selection (Gradual Migration)**
-   If a specific file cannot be immediately migrated to the new language version (e.g., pending null safety migration or complex refactoring), pin the file to an older version.
-   - The `@dart` string must be in a `//` comment.
-   - It must appear *before* any Dart code in the file.
-   ```dart
-   // @dart = 2.19
-   import 'dart:math';
-   
-   // Legacy code that relies on 2.19 semantics
-   void legacyFunction() {
-     // ...
-   }
-   ```
+### Per-Library Version Selection
+Override the package-wide language version for individual files using a specific comment syntax.
+- Place the `@dart` string inside a `//` comment (do not use `///` or `/*`).
+- Ensure the comment appears **before** any Dart code in the file.
+- Use this mechanism to maintain legacy code compatibility while upgrading the rest of the package.
 
-4. **Migrate Deprecated Web and JS Interop Libraries (Dart 3.3+)**
-   If the project targets Dart 3.3+ or compiles to Wasm, legacy web libraries (`dart:html`, `dart:js`, `package:js`) will cause compilation errors. Migrate these to `package:web` and `dart:js_interop`.
-   ```dart
-   // BEFORE (Legacy)
-   import 'dart:html';
-   import 'package:js/js.dart';
-   
-   @JS()
-   external void legacyJsFunction();
-   
-   // AFTER (Modern)
-   import 'package:web/web.dart' as web;
-   import 'dart:js_interop';
-   
-   @JS()
-   external void modernJsFunction();
-   
-   void updateDom() {
-     final div = web.document.createElement('div') as web.HTMLDivElement;
-     div.text = 'Migrated';
-     web.document.body?.append(div);
-   }
-   ```
+## Workflows
 
-5. **Validate-and-Fix Loop**
-   After updating the SDK constraint or modifying code, run static analysis to verify the migration.
-   ```bash
-   dart analyze
-   ```
-   *Fixing common post-upgrade errors:*
-   - If `unnecessary_non_null_assertion` or `invalid_null_aware_operator` appears, remove the `!` or `?.` as type promotion has likely improved in the newer Dart version.
-   - If `dart:js_util` or `dart:html` throws Wasm compilation errors, return to Step 4.
+### Task Progress: Gradual Language Version Migration
+Use this workflow when upgrading a project to a new Dart major/minor version that contains breaking changes.
 
-## Constraints
-- DO check current language version requirements in `pubspec.yaml` before making any syntax changes.
-- DO use `@dart = <version>` to pin specific files to older versions during migration if a full refactor is not requested.
-- DO consult breaking change logs before performing major dependency upgrades.
-- NEVER use `///` or `/* */` for the `@dart` version override comment; it must be `//`.
-- NEVER place the `@dart` comment after imports or code declarations.
-- NEVER attempt to use `dart:html`, `dart:js`, or `dart:js_util` when compiling to WebAssembly (`dart compile wasm`).
-- NEVER disable sound null safety in Dart 3.0+; the `--no-sound-null-safety` flag and unsound execution are completely removed.
+- [ ] **Analyze Current State**: Run `dart analyze` on the current version to ensure a clean baseline.
+- [ ] **Check Constraints**: Inspect `pubspec.yaml` to identify the current lower-bound SDK constraint.
+- [ ] **Review Breaking Changes**: Consult the [Breaking Changes Reference](#breaking-changes-reference) for the target version.
+- [ ] **Update SDK Constraint**: Modify the `environment.sdk` lower bound in `pubspec.yaml` to the target version.
+- [ ] **Run Dependency Resolution**: Execute `dart pub get`.
+- [ ] **Identify Breakages**: Run `dart analyze`.
+- [ ] **Apply Conditional Logic for Fixes**:
+  - *If the file is small or easily refactored*: Fix the breaking changes immediately to comply with the new language version.
+  - *If the file is complex or part of a large legacy module*: Insert `// @dart = <previous_version>` at the top of the file to defer migration.
+- [ ] **Run Validator**: Execute `dart test` and `dart analyze` -> review errors -> fix remaining issues.
+
+## Examples
+
+### Setting the Package Language Version
+```yaml
+# pubspec.yaml
+name: my_package
+environment:
+  # This sets the default language version to Dart 3.3
+  sdk: '>=3.3.0 <4.0.0'
+```
+
+### Applying a Per-Library Override
+```dart
+// @dart = 2.19
+// The above comment pins this specific file to Dart 2.19, 
+// even if the pubspec.yaml specifies Dart 3.0+.
+
+import 'dart:math';
+
+void legacyFunction() {
+  // Legacy code implementation
+}
+```
+
+## Breaking Changes Reference
+
+<details>
+<summary>Expand for Critical Dart Breaking Changes (Versions 2.12 - 3.11)</summary>
+
+### Dart 3.11.0
+- **Wasm Compilation**: Code importing `dart:js_util` or `package:js` results in a compilation error. Migrate to `dart:js_interop`.
+- **Analyzer**: Deprecated `avoid_null_checks_in_equality_operators`, `prefer_final_parameters`, and `use_if_null_to_convert_nulls_to_bools` lint rules.
+
+### Dart 3.10.0
+- **SDK**: The `dart` CLI and Dart VM are now separate executables (`dartvm`). IA32 platform support removed.
+- **Wasm Compilation**: `dartify` converts JS `Promise` objects to Dart `Future` objects instead of `JSValue`.
+
+### Dart 3.7.0
+- **Language**: Local variables and parameters named `_` are non-binding and cannot be accessed.
+- **Libraries**: Legacy web libraries (`dart:html`, `dart:js`, etc.) are officially deprecated. Migrate to `package:web` and `dart:js_interop`.
+
+### Dart 3.5.0
+- **Runtime**: The Dart VM no longer supports unsound null safety. `--no-sound-null-safety` CLI option removed.
+
+### Dart 3.0.0 (Major Breaking Changes)
+- **Language**: Null safety is strictly enforced. Switch cases are now interpreted as patterns.
+- **Mixins**: Class declarations from Dart 3.0+ libraries can no longer be used as mixins by default.
+- **Core**: `Iterable`, `ListMixin`, `SetMixin`, and `MapMixin` are now mixin classes.
+
+### Dart 2.12.0
+- **Language**: Sound null safety enabled by default.
+
+</details>
+
+## Related Skills
+- `dart-web-development`
+- `dart-static-analysis`

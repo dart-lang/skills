@@ -3,129 +3,128 @@ name: dart-testing
 description: Ensure code correctness with comprehensive unit and integration tests.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:32:51 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:20:13 GMT
 ---
-# Dart Testing Automation
+# Testing Dart Applications
 
-## Goal
-Analyzes Dart and Flutter codebases to architect, implement, and execute robust test suites. Generates unit, component, and integration tests utilizing `package:test` and `package:mockito`. Configures mock objects, structures test groups, and executes validation loops using `dart test` or `flutter test` to ensure code reliability and prevent regressions.
+## Contents
+- [Core Testing Principles](#core-testing-principles)
+- [Test Implementation Guidelines](#test-implementation-guidelines)
+- [Mocking and Isolation](#mocking-and-isolation)
+- [Running Tests](#running-tests)
+- [Workflows](#workflows)
+- [Examples](#examples)
+- [Related Skills](#related-skills)
 
-## Decision Logic
-Evaluate the target repository to determine the appropriate testing strategy:
-*   **Project Type:**
-    *   If `pubspec.yaml` contains `sdk: flutter`: Use `flutter_test` and execute via `flutter test`.
-    *   If pure Dart (Server/CLI/Web): Use `package:test` and execute via `dart test`.
-*   **Test Scope:**
-    *   *Isolated Logic (Functions/Classes):* Implement **Unit Tests**. Isolate the system under test using `package:mockito`.
-    *   *UI/Multi-class interactions:* Implement **Component/Widget Tests**. Use `flutter_test` for widget pumping or standard component instantiation.
-    *   *Full Application Flow:* Implement **Integration Tests**. Use `flutter_driver` or `integration_test` package.
+## Core Testing Principles
 
-## Instructions
+Apply the appropriate testing strategy based on the target environment and scope:
 
-1. **Analyze Context and Configure Dependencies**
-   Inspect `pubspec.yaml`. Ensure the required testing and mocking packages are present under `dev_dependencies`.
-   ```yaml
-   dev_dependencies:
-     test: ^1.24.0 # Use flutter_test for Flutter projects
-     mockito: ^5.4.4
-     build_runner: ^2.4.8
-   ```
+- **Unit Tests:** Verify the smallest piece of testable software (functions, methods, classes). Maximize coverage here.
+- **Component/Widget Tests:** Verify that a component (multiple classes or Flutter Widgets) behaves as expected. Use mock objects to mimic user actions and events.
+- **Integration/End-to-End Tests:** Verify the behavior of an entire app or large subsystem on a simulated/real device or browser.
 
-2. **Generate Mock Objects**
-   Identify external dependencies (e.g., API clients, database repositories) of the system under test. Create a test file and use the `@GenerateMocks` annotation.
-   ```dart
-   import 'package:mockito/annotations.dart';
-   import 'package:my_app/api_client.dart';
+**Conditional Logic for Test Environments:**
+- **If testing a pure Dart package or server app:** Use `package:test`.
+- **If testing a Flutter app:** Use `flutter_test` (built on `package:test`) for unit/widget tests, and `integration_test` or `flutter_driver` for end-to-end tests.
 
-   @GenerateMocks([ApiClient])
-   void main() {}
-   ```
-   Execute the build runner to generate the mock files:
-   ```bash
-   dart run build_runner build --delete-conflicting-outputs
-   ```
-   **STOP AND ASK THE USER:** If you do not have execution capabilities in the current environment, provide the `build_runner` command to the user and wait for them to confirm successful generation before proceeding.
+## Test Implementation Guidelines
 
-3. **Implement the Test Suite**
-   Write tests using the `test` package. Group related tests and use descriptive names. Utilize `expect()` with appropriate matchers.
-   ```dart
-   import 'package:test/test.dart';
-   import 'package:mockito/mockito.dart';
-   import 'package:my_app/data_service.dart';
-   import 'api_client.mocks.dart'; // Generated mock file
+Structure and write tests using the `test` package conventions.
 
-   void main() {
-     group('DataService -', () {
-       late DataService dataService;
-       late MockApiClient mockApiClient;
+- **Descriptive Naming:** Use `group()` to categorize related tests and `test()` for individual cases. Provide clear, descriptive names that explain the expected behavior.
+- **Assertions:** Always use `expect(actual, matcher)` for assertions.
+- **Async Matchers:** Use `completion()` to verify Future resolutions and `throwsA()` to verify exceptions.
+- **Annotations:** Use `@TestOn('browser')` or `@TestOn('vm')` to restrict tests to specific environments. Use `@Tag('name')` to categorize tests for custom configurations.
 
-       setUp(() {
-         mockApiClient = MockApiClient();
-         dataService = DataService(apiClient: mockApiClient);
-       });
+## Mocking and Isolation
 
-       test('fetchData returns parsed data on successful API call', () async {
-         // Arrange
-         when(mockApiClient.get('/data')).thenAnswer((_) async => '{"status": "ok"}');
+Isolate the system under test (SUT) to ensure deterministic and fast execution.
 
-         // Act
-         final result = await dataService.fetchData();
+- **Prefer Mocks and Fakes:** Do not use real network calls, databases, or complex external dependencies in unit tests.
+- **Use `package:mockito`:** Generate mock classes for complex dependencies. Define fixed scenarios and verify that the SUT interacts with the mock object in expected ways.
+- **Code Generation:** Use `build_runner` to generate mock implementations (see `dart-code-generation`).
 
-         // Assert
-         expect(result, equals({'status': 'ok'}));
-         verify(mockApiClient.get('/data')).called(1);
-       });
+## Running Tests
 
-       test('fetchData throws Exception on API failure', () async {
-         // Arrange
-         when(mockApiClient.get('/data')).thenThrow(Exception('Network Error'));
+Execute tests via the command line using targeted flags to optimize the feedback loop.
 
-         // Act & Assert
-         expect(
-           () => dataService.fetchData(),
-           throwsA(isA<Exception>()),
-         );
-       });
-     });
-   }
-   ```
+- **Run all tests:** `dart test` (or `flutter test`)
+- **Run specific directories:** `dart test test/unit/` or `dart test test/integration/`
+- **Run specific files:** `dart test test/services/auth_test.dart`
+- **Filter by tags:** `dart test --tags="integration"` or `dart test --exclude-tags="slow"`
+- **Filter by name:** `dart test --name="AuthService"`
 
-4. **Execute Tests and Validate**
-   Run the test suite using the appropriate CLI command. Use flags to target specific directories or tags if necessary.
-   ```bash
-   # For pure Dart projects
-   dart test test/data_service_test.dart
+## Workflows
 
-   # For Flutter projects
-   flutter test test/data_service_test.dart
-   ```
+### Workflow: Implementing a Unit Test Suite
 
-5. **Validate-and-Fix Loop**
-   Parse the output of the test execution. 
-   *   If tests **pass**, proceed to the next task or finalize the implementation.
-   *   If tests **fail**, analyze the stack trace, identify the mismatch between expected and actual values, modify the source code or the test assertions accordingly, and re-run the tests until they pass.
+Copy and track this checklist when implementing new tests:
 
-6. **Configure Continuous Integration (Optional)**
-   If requested, generate a GitHub Actions workflow to automate test execution.
-   ```yaml
-   name: Dart CI
-   on: [push, pull_request]
-   jobs:
-     test:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v4
-         - uses: dart-lang/setup-dart@v1
-         - run: dart pub get
-         - run: dart test
-   ```
+- [ ] 1. Identify the class/function to test and its external dependencies.
+- [ ] 2. Create a corresponding `_test.dart` file in the `test/` directory.
+- [ ] 3. Define mock objects for all external dependencies using `package:mockito` or manual fakes.
+- [ ] 4. Set up the test `group()` with a descriptive name.
+- [ ] 5. Initialize the SUT and mocks within a `setUp()` block.
+- [ ] 6. Write individual `test()` cases covering success, failure, and edge cases.
+- [ ] 7. Use `expect()` with appropriate matchers (`completion`, `throwsA`, etc.).
+- [ ] 8. **Feedback Loop:** Run `dart test path/to/test.dart` -> Review failures -> Fix implementation or test logic -> Repeat until passing.
 
-## Constraints
-*   DO write tests using the `test` package with descriptive `group` and `test` names.
-*   DO use `expect()` with appropriate matchers (e.g., `completion`, `throwsA`, `isA`).
-*   DO run tests via `dart test` (or `flutter test`) and use flags for specific directories or tags when applicable.
-*   PREFER mock objects or fakes (via `package:mockito`) to isolate the system under test. Never make real HTTP requests or database mutations in unit tests.
-*   DO NOT write monolithic test functions; strictly separate Arrange, Act, and Assert phases.
-*   DO NOT leave unresolved type promotion failures in test files; ensure sound null safety is respected.
-*   Related Skills: `dart-static-analysis`, `dart-code-generation`.
+## Examples
+
+### High-Fidelity Unit Test Example
+
+```dart
+import 'package:test/test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+
+// Assume these are defined in your application code
+import 'package:my_app/auth_service.dart';
+import 'package:my_app/api_client.dart';
+
+// Generate mocks using build_runner
+@GenerateMocks([ApiClient])
+import 'auth_service_test.mocks.dart';
+
+void main() {
+  group('AuthService', () {
+    late AuthService authService;
+    late MockApiClient mockApiClient;
+
+    setUp(() {
+      mockApiClient = MockApiClient();
+      authService = AuthService(apiClient: mockApiClient);
+    });
+
+    test('login successfully returns a user token', () async {
+      // Arrange
+      when(mockApiClient.post('/login', any))
+          .thenAnswer((_) async => {'token': 'abc-123'});
+
+      // Act
+      final result = authService.login('user', 'password');
+
+      // Assert
+      await expectLater(result, completion(equals('abc-123')));
+      verify(mockApiClient.post('/login', any)).called(1);
+    });
+
+    test('login throws AuthException on invalid credentials', () async {
+      // Arrange
+      when(mockApiClient.post('/login', any))
+          .thenThrow(Exception('Unauthorized'));
+
+      // Act
+      final result = authService.login('user', 'wrong_password');
+
+      // Assert
+      await expectLater(result, throwsA(isA<AuthException>()));
+    });
+  });
+}
+```
+
+## Related Skills
+- `dart-static-analysis`: For configuring linting rules that enforce test quality.
+- `dart-code-generation`: For generating mock objects via `build_runner` and `mockito`.

@@ -3,148 +3,185 @@ name: dart-async-programming
 description: Handle asynchronous operations safely using Futures and Streams.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:31:03 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:19:00 GMT
 ---
-# dart-async-programming
+# Writing Asynchronous Dart Code
 
-## Goal
-Implements robust, idiomatic asynchronous Dart code using `Future` and `Stream` APIs. Manages concurrency, stream processing, and error handling while adhering to strict Dart async patterns, memory safety guidelines, and optimal execution flow.
+## Contents
+- [Core Guidelines](#core-guidelines)
+- [Handling Futures](#handling-futures)
+- [Managing Streams](#managing-streams)
+- [Workflows](#workflows)
+- [Examples](#examples)
+- [Related Skills](#related-skills)
 
-## Decision Logic
-When determining the appropriate asynchronous pattern, evaluate the following decision tree:
-*   **Single Asynchronous Operation:** Use `Future<T>` with `async` and `await`.
-*   **Multiple Independent Operations:** Use `Future.wait` to execute concurrently.
-*   **Sequence of Asynchronous Events:** Use `Stream<T>`.
-    *   *Finite/Sequential Data (e.g., File I/O, Network Responses):* Consume using `await for`.
-    *   *Infinite/Event-Driven Data (e.g., UI Events):* Use `listen()` on a Broadcast Stream.
-*   **Custom Stream Generation:** 
-    *   *Simple Generation:* Use `async*` and `yield`.
-    *   *Complex State/Event Management:* Use `StreamController`.
+## Core Guidelines
 
-## Instructions
+Write asynchronous Dart code using modern, declarative patterns. Avoid legacy callback-based approaches. Assume all network, file I/O, and database operations are asynchronous.
 
-1. **Implement Single Futures with Error Handling**
-   Always use `async`/`await` syntax instead of `.then()`. Wrap operations in `try-catch` blocks to handle exceptions gracefully.
-   ```dart
-   Future<String> fetchUserData(String userId) async {
-     try {
-       final result = await api.getUser(userId);
-       return result.name;
-     } catch (e, stackTrace) {
-       // Handle specific errors or rethrow
-       logError('Failed to fetch user: $e', stackTrace);
-       throw UserFetchException(e.toString());
-     }
-   }
-   ```
+- **Use `async`/`await`**: Always prefer `async` and `await` over raw `.then()`, `.catchError()`, or `.whenComplete()` chains. This flattens the execution flow and improves readability.
+- **Handle Errors Gracefully**: Wrap all `await` calls in `try-catch` blocks to handle exceptions. Do not rely on unhandled future rejections.
+- **Execute Concurrently**: Use `Future.wait` to initiate and await multiple independent futures concurrently rather than awaiting them sequentially.
+- **Consume Streams Sequentially**: Prefer `await for` over `.forEach()` or `.listen()` when consuming streams, unless you specifically need low-level subscription management (like pausing or resuming).
+- **Prevent Memory Leaks**: Always call `.close()` on a `StreamController` when it is no longer needed or when the owning class is disposed.
 
-2. **Execute Independent Futures Concurrently**
-   When multiple asynchronous operations do not depend on each other, initiate them concurrently using `Future.wait`.
-   ```dart
-   Future<UserProfile> loadCompleteProfile(String userId) async {
-     try {
-       final results = await Future.wait([
-         api.getUser(userId),
-         api.getUserPreferences(userId),
-         api.getUserHistory(userId),
-       ]);
-       
-       return UserProfile(
-         user: results[0] as User,
-         preferences: results[1] as Preferences,
-         history: results[2] as History,
-       );
-     } catch (e) {
-       throw ProfileLoadException('Failed to load profile components: $e');
-     }
-   }
-   ```
+## Handling Futures
 
-3. **Consume Streams Sequentially**
-   Use `await for` to consume streams when you need to process events sequentially and wait for the stream to close.
-   ```dart
-   Future<int> calculateTotal(Stream<int> numberStream) async {
-     int total = 0;
-     try {
-       await for (final number in numberStream) {
-         total += number;
-       }
-     } catch (e) {
-       logError('Stream processing failed: $e');
-       return -1;
-     }
-     return total;
-   }
-   ```
+### Sequential vs. Concurrent Execution
 
-4. **Generate Streams using Generators**
-   For straightforward sequential event generation, use `async*` and `yield`.
-   ```dart
-   Stream<int> generateCountdown(int from) async* {
-     for (int i = from; i >= 0; i--) {
-       await Future.delayed(const Duration(seconds: 1));
-       yield i;
-     }
-   }
-   ```
+If operations depend on each other, await them sequentially. If operations are independent, initiate them concurrently to optimize execution time.
 
-5. **Manage Complex Streams with StreamController**
-   When manually controlling stream state, instantiate a `StreamController`. You MUST ensure the controller is closed when no longer needed to prevent memory leaks.
-   ```dart
-   class DataManager {
-     final StreamController<DataEvent> _controller = StreamController<DataEvent>.broadcast();
+**Sequential (Dependent):**
+```dart
+final user = await fetchUser(id);
+final profile = await fetchProfile(user.profileId);
+```
 
-     Stream<DataEvent> get dataStream => _controller.stream;
+**Concurrent (Independent):**
+```dart
+final results = await Future.wait([
+  fetchUserData(id),
+  fetchUserPreferences(id),
+  fetchUserPermissions(id),
+]);
+```
 
-     void addData(DataEvent event) {
-       if (!_controller.isClosed) {
-         _controller.add(event);
-       }
-     }
+### Error Handling
 
-     void dispose() {
-       _controller.close();
-     }
-   }
-   ```
+Always use standard `try-catch-finally` blocks within `async` functions.
 
-6. **Apply Stream Transformations and Timeouts**
-   Use built-in stream methods to handle errors, timeouts, and transformations before consumption.
-   ```dart
-   Stream<String> processNetworkStream(Stream<List<int>> byteStream) async* {
-     final safeStream = byteStream
-         .handleError((e) => logError('Network error: $e'))
-         .timeout(
-           const Duration(seconds: 5),
-           onTimeout: (sink) {
-             sink.addError(TimeoutException('Stream timed out'));
-             sink.close();
-           },
-         )
-         .transform(utf8.decoder)
-         .transform(const LineSplitter());
+```dart
+try {
+  final data = await fetchData();
+  process(data);
+} on NetworkException catch (e) {
+  handleNetworkError(e);
+} catch (e) {
+  handleGenericError(e);
+} finally {
+  cleanupResources();
+}
+```
 
-     await for (final line in safeStream) {
-       if (line.isNotEmpty) yield line;
-     }
-   }
-   ```
+## Managing Streams
 
-7. **Context Checkpoint**
-   **STOP AND ASK THE USER:** If the user requests stream implementation but does not specify if the stream will have multiple listeners (e.g., UI state) or a single listener (e.g., file reading), ask them to clarify before implementing `StreamController` or `StreamController.broadcast()`.
+### Consuming Streams
 
-8. **Validate-and-Fix**
-   After generating asynchronous code, perform a validation pass:
-   *   *Check:* Are there any raw `.then()` or `.catchError()` chains? *Fix:* Convert to `async`/`await` and `try-catch`.
-   *   *Check:* Are multiple independent `await` calls made sequentially? *Fix:* Combine them using `Future.wait`.
-   *   *Check:* Is a `StreamController` instantiated without a corresponding `close()` method in a disposal lifecycle? *Fix:* Add the `close()` call.
+Use the asynchronous for-loop (`await for`) to process stream events sequentially. This automatically handles stream completion and integrates cleanly with `try-catch` for error handling.
 
-## Constraints
-*   DO use `async`/`await` instead of raw `.then()` calls for better readability.
-*   DO wrap asynchronous calls in `try-catch` to handle errors gracefully.
-*   PREFER `Future.wait` to initiate multiple independent futures concurrently.
-*   PREFER `await for` over `forEach` or `listen` when consuming streams sequentially.
-*   DO use `StreamController` with a `close()` call to prevent memory leaks.
-*   DO NOT use `await for` for UI event listeners, as UI frameworks send endless streams of events which will block execution indefinitely.
-*   Related Skills: `dart-idiomatic-usage`, `dart-concurrency-isolates`.
+```dart
+try {
+  await for (final chunk in fileStream) {
+    processChunk(chunk);
+  }
+} catch (e) {
+  logError('Stream processing failed: $e');
+}
+```
+
+### Creating and Managing Streams
+
+When creating custom streams using `StreamController`, ensure you manage the lifecycle properly to avoid memory leaks.
+
+```dart
+class DataProvider {
+  final _controller = StreamController<Data>.broadcast();
+
+  Stream<Data> get dataStream => _controller.stream;
+
+  void updateData(Data newData) {
+    if (!_controller.isClosed) {
+      _controller.add(newData);
+    }
+  }
+
+  void dispose() {
+    _controller.close(); // Mandatory cleanup
+  }
+}
+```
+
+## Workflows
+
+### Task Progress: Implementing an Async Data Fetcher
+Copy this checklist to track progress when implementing asynchronous data fetching logic:
+
+- [ ] Identify if the required operations are sequential or independent.
+- [ ] Mark the function with the `async` keyword and return a `Future<T>`.
+- [ ] Wrap the asynchronous operations in a `try-catch` block.
+- [ ] If independent, group futures using `Future.wait`.
+- [ ] If sequential, use `await` for each step.
+- [ ] Handle specific exceptions using `on ExceptionType catch (e)`.
+- [ ] Run validator -> review errors -> fix unhandled promise rejections.
+
+### Task Progress: Implementing a Stream Consumer
+Copy this checklist to track progress when consuming a stream:
+
+- [ ] Verify the stream source (Single subscription vs. Broadcast).
+- [ ] Mark the consuming function as `async`.
+- [ ] Wrap the consumption logic in a `try-catch` block.
+- [ ] Implement an `await for` loop to iterate over the stream.
+- [ ] Ensure the loop breaks or returns if a specific termination condition is met.
+- [ ] If managing a `StreamController`, implement a `dispose()` or `close()` method.
+
+## Examples
+
+### Anti-Pattern vs. Best Practice: Futures
+
+**Anti-Pattern (Do Not Use):**
+```dart
+Future<void> loadUserData() {
+  return fetchUser()
+    .then((user) {
+      return fetchProfile(user.id)
+        .then((profile) {
+          print('User: ${user.name}, Profile: ${profile.status}');
+        });
+    })
+    .catchError((error) {
+      print('Error: $error');
+    });
+}
+```
+
+**Best Practice:**
+```dart
+Future<void> loadUserData() async {
+  try {
+    final user = await fetchUser();
+    final profile = await fetchProfile(user.id);
+    print('User: ${user.name}, Profile: ${profile.status}');
+  } catch (error) {
+    print('Error: $error');
+  }
+}
+```
+
+### Anti-Pattern vs. Best Practice: Streams
+
+**Anti-Pattern (Do Not Use):**
+```dart
+void processEvents(Stream<Event> eventStream) {
+  eventStream.listen(
+    (event) => handleEvent(event),
+    onError: (error) => print('Error: $error'),
+  );
+}
+```
+
+**Best Practice:**
+```dart
+Future<void> processEvents(Stream<Event> eventStream) async {
+  try {
+    await for (final event in eventStream) {
+      handleEvent(event);
+    }
+  } catch (error) {
+    print('Error: $error');
+  }
+}
+```
+
+## Related Skills
+- `dart-idiomatic-usage`
+- `dart-concurrency-isolates`

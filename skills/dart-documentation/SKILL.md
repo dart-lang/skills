@@ -3,92 +3,112 @@ name: dart-documentation
 description: Use idiomatic doc comments to provide a professional API surface.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Mon, 09 Mar 2026 22:28:42 GMT
-
+  last_modified: Tue, 07 Apr 2026 18:16:57 GMT
 ---
-# dart-documentation
+# Documenting Dart Code
 
-## Goal
-Generates, formats, and validates Dart documentation comments and API reference sites according to Effective Dart guidelines. Assumes a standard Dart or Flutter project environment with the Dart SDK installed and accessible.
+## Contents
+- [Core Principles](#core-principles)
+- [Formatting Doc Comments](#formatting-doc-comments)
+- [Documenting Specific Constructs](#documenting-specific-constructs)
+- [Workflow: Generating and Validating Docs](#workflow-generating-and-validating-docs)
+- [Examples](#examples)
 
-## Instructions
+## Core Principles
 
-1. **Analyze the Target Declaration**
-   Review the Dart code requiring documentation. Identify the declaration type (e.g., library, class, method, getter/setter, variable) to determine the appropriate phrasing and structure.
+- **Use `///` exclusively:** Document members and types using `///`. Never use `/** ... */` block comments for documentation.
+- **Use `//` for internal comments:** Use standard `//` comments for implementation details that should not appear in generated public documentation.
+- **Format as sentences:** Capitalize the first word (unless it is a case-sensitive identifier) and end with a period.
+- **Prefer brevity:** Be clear, precise, and terse. Avoid redundant information that can be inferred from the method signature or class name.
+- **Use Markdown:** Utilize standard Markdown for formatting. Prefer backtick fences (```) for code blocks over indentation. Avoid HTML tags.
 
-2. **Apply Phrasing Decision Logic**
-   Determine the opening sentence structure based on the following decision tree:
-   * **Is it a function or method primarily for side effects?**
-     * -> Start with a third-person verb (e.g., "Connects to...", "Starts the...").
-   * **Is it a non-boolean variable, property, or a method conceptually returning a value?**
-     * -> Start with a noun phrase (e.g., "The current day...", "The [index]th element...").
-   * **Is it a boolean variable or property?**
-     * -> Start with "Whether" followed by a noun/gerund phrase (e.g., "Whether the modal is...").
-   * **Is it a library or type (class, enum, etc.)?**
-     * -> Start with a noun phrase describing an *instance* of the type (e.g., "A chunk of non-breaking output...").
+## Formatting Doc Comments
 
-3. **Draft the Doc Comment**
-   Write the documentation using `///` syntax. Place the brief, third-person singular summary on its own line. Leave a blank line before starting the next paragraph.
-   
-   ```dart
-   /// Deletes the file at [path].
-   ///
-   /// Throws an [IOError] if the file could not be found. Throws a
-   /// [PermissionError] if the file is present but could not be deleted.
-   void delete(String path) { ... }
-   ```
+- **Start with a summary:** Begin the first sentence with a brief, third-person singular summary. 
+- **Isolate the summary:** Place the summary on its own line, followed by a blank line, to ensure optimal readability in IDE tooltips and generated summaries.
+- **Use square brackets for references:** Link to types, methods, or variables in scope using `[identifier]`. 
+  - Use `[ClassName.memberName]` for specific members.
+  - Use `[ClassName.new]` for unnamed constructors.
+- **Use prose for parameters and returns:** Integrate parameter, return value, and exception descriptions into the prose rather than using verbose tags (e.g., `@param`). Highlight parameters using square brackets.
+- **Place docs before metadata:** Always position doc comments before metadata annotations (e.g., `@override`).
 
-4. **Format Parameters, Returns, and Exceptions**
-   Integrate parameter descriptions, return values, and exceptions into prose using square brackets `[]` for in-scope identifiers. Do not use verbose tags like `@param` or `@returns`.
-   
-   ```dart
-   /// Defines a flag with the given [name] and [abbreviation].
-   ///
-   /// Returns a new flag.
-   ///
-   /// Throws a [DuplicateFlagException] if there is already an option named
-   /// [name] or there is already an option using the [abbreviation].
-   Flag addFlag(String name, String abbreviation) => ...
-   ```
+## Documenting Specific Constructs
 
-5. **Handle Metadata Annotations**
-   Always place doc comments *before* metadata annotations.
-   
-   ```dart
-   /// A button that can be flipped on and off.
-   @Component(selector: 'toggle')
-   class ToggleComponent {}
-   ```
+### Methods and Functions
+- **Side effects:** If the primary purpose is a side effect, start the summary with a third-person verb (e.g., "Connects to the server...").
+- **Return values:** If the primary purpose is returning a value, start with a noun phrase (e.g., "The [index]th element...").
 
-6. **Generate and Validate Documentation**
-   **STOP AND ASK THE USER:** "Would you like me to generate and validate the documentation using the `dart doc` CLI?"
-   If the user confirms, execute the following validation loop:
-   
-   ```bash
-   # Ensure dependencies are resolved and code is valid
-   dart pub get
-   dart analyze
-   
-   # Run a dry-run to catch documentation warnings/errors
-   dart doc --dry-run .
-   ```
+### Variables and Properties
+- **Non-booleans:** Start with a noun phrase describing what the property *is* (e.g., "The current day of the week...").
+- **Booleans:** Start with "Whether" followed by a noun or gerund phrase (e.g., "Whether the modal is currently displayed...").
+- **Getters/Setters:** If a property has both a getter and a setter, document *only* the getter.
 
-7. **Validate-and-Fix Loop**
-   If `dart doc --dry-run .` outputs warnings (e.g., unresolved doc references), parse the output, locate the broken `[identifier]` links, and correct them. Once clean, generate the final docs:
-   
-   ```bash
-   dart doc .
-   # Optionally specify output: dart doc --output=api_docs .
-   ```
+### Classes and Libraries
+- **Classes:** Start with a noun phrase describing an *instance* of the type.
+- **Libraries:** Place a `///` comment before the `library` directive. Include a single-sentence summary, terminology explanations, and code samples.
 
-## Constraints
+## Workflow: Generating and Validating Docs
 
-* **Syntax:** DO use `///` exclusively for doc comments. NEVER use `/** ... */` or block comments `/* ... */` for documentation.
-* **Summary Line:** DO begin the first sentence with a brief, third-person singular summary. PREFER placing the summary on its own line for better readability in IDE tooltips.
-* **References:** DO use square brackets `[]` to link to types, methods, or variables in scope (e.g., `[Duration.inDays]`, `[Point.new]`).
-* **Code Blocks:** PREFER providing concise code examples for complex logic using markdown backtick blocks (```dart ... ```).
-* **Redundancy:** AVOID redundancy with the surrounding context. Do not spell out the method signature or enclosing class if it is obvious.
-* **Properties:** DON'T write documentation for both the getter and setter of a property. Document only one (usually the getter).
-* **Validation:** DO verify generated docs using `dart doc --validate-links` (or `--dry-run`).
-* **Formatting:** Capitalize the first word of comments and end with a period.
-* **Related Skills:** `dart-effective-style`.
+Follow this sequential workflow when writing and verifying documentation for a Dart package.
+
+### Task Progress
+- [ ] 1. Write doc comments using `///` and Markdown.
+- [ ] 2. Resolve dependencies: Run `dart pub get`.
+- [ ] 3. Ensure code is error-free: Run `dart analyze`.
+- [ ] 4. Generate and validate docs: Run `dart doc --validate-links`.
+- [ ] 5. Review output for missing references or formatting warnings.
+- [ ] 6. (Optional) Serve locally to verify UI rendering.
+
+### Feedback Loop: Validation
+When generating documentation, you must validate that all `[references]` resolve correctly.
+1. **Run validator:** Execute `dart doc --validate-links .`
+2. **Review errors:** Check the console output for broken links or unresolved symbols.
+3. **Fix:** Correct typos in `[brackets]`, ensure referenced members are in scope, or adjust imports. Repeat until the command succeeds without warnings.
+
+### Conditional Logic: Viewing Docs Locally
+- **If you need to preview the generated HTML:**
+  1. Activate the local server: `dart pub global activate dhttpd`
+  2. Serve the `doc/api` directory: `dart pub global run dhttpd --path doc/api`
+  3. Open the provided localhost URL in a browser.
+
+## Examples
+
+### High-Quality Method Documentation
+
+```dart
+/// Deletes the file at [path].
+///
+/// Throws an [IOError] if the file could not be found. Throws a
+/// [PermissionError] if the file is present but could not be deleted.
+void delete(String path) {
+  // Implementation details...
+}
+```
+
+### High-Quality Property Documentation
+
+```dart
+/// The pH level of the water in the pool.
+///
+/// Ranges from 0-14, representing acidic to basic, with 7 being neutral.
+int get phLevel => _phLevel;
+set phLevel(int level) => _phLevel = level;
+```
+
+### High-Quality Boolean Documentation
+
+```dart
+/// Whether the modal should confirm the user's intent on navigation.
+bool get shouldConfirm => _shouldConfirm;
+```
+
+### High-Quality Class Documentation with Code Sample
+
+```dart
+/// The lesser of two numbers.
+///
+/// ```dart
+/// min(5, 3) == 3
+/// ```
+num min(num a, num b) => (a < b) ? a : b;
+```
