@@ -22,3 +22,54 @@
     - https://pub.dev/packages/test
     - https://dart.dev/tools/dart-test
     - https://dart.dev/tools/testing
+- name: dart-use-pattern-matching
+  description: Use switch expressions and pattern matching where appropriate
+  instructions: |
+    1.  **Identify Scenarios for Pattern Matching:**
+        *   Determine if you need to test a value to see if it has an expected form.
+        *   Consider situations where you want to destructure an object and extract its data into parts.
+        *   Look for operations that require specific behavior for each type, especially when grouping that behavior in one place rather than spreading it across type definitions.
+        *   Evaluate if you need to validate incoming data, such as deserialized JSON, where map and list patterns can be used for destructuring key-value pairs.
+        *   Consider using patterns in local variable declarations and assignments, `for` and `for-in` loops, `if-case` statements, and control flow in collection literals.
+
+    2.  **Choose Between Switch Statements and Switch Expressions:**
+        *   If you need to produce a value based on which case matches, use a switch expression. Switch expressions can be used wherever Dart allows expressions, except at the start of an expression statement.
+        *   If you want to use a switch at the start of an expression statement, use a switch statement.
+        *   Switch expressions offer a more concise way to rewrite switch statements, where case bodies are single expressions and cases are separated from their bodies using `=>` instead of `:`.
+        *   Switch statements and expressions both allow any kind of pattern in their case clauses.
+
+    3.  **Define Case Patterns:**
+        *   **Constant Patterns:** Match if the value is equal to a constant.
+        *   **Logical-or Patterns (`||`):** Allow multiple cases to share a body or a guard in switch expressions or statements.
+        *   **Relational and Logical-and Patterns (`>=`, `<=`, `&&`):** Match if a value falls within a specified range.
+        *   **Record Patterns:** Match if an object is a record with specific fields, and can assign those fields to variables.
+        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields.
+        *   **Map Patterns:** Useful for destructuring key-value pairs in deserialized data.
+        *   **Variable Patterns:** Declare new local variables when a pattern matches and destructures a value.
+        *   **Wildcard Patterns (`_`):** Use as a placeholder to ignore parts of a matched value. In list patterns, a rest element can also be used.
+        *   **Null-check Patterns (`?`):** Treat null values as match failures without throwing, making the matched variable non-nullable.
+        *   **Null-assert Patterns (`!`):** Match if the object is not null, permitting non-null values to flow through but throwing if the matched value is null.
+        *   **Parenthesized Patterns:** Control pattern precedence.
+
+    4.  **Implement Case Bodies:**
+        *   For switch expressions, each case must have a single expression as its body, and there is no implicit fallthrough for empty cases.
+        *   For switch statements, empty cases can fall through to the next case, allowing cases to share a body. `break` can be used for an empty case that does not fall through, and `continue` with a label can be used for non-sequential fall-through.
+
+    5.  **Add Guard Clauses (Optional):**
+        *   Use the `when` keyword to set an optional guard clause after a case clause in both switch statements and expressions.
+        *   Guard clauses evaluate an arbitrary condition as part of a case without exiting the switch if the condition is false.
+
+    6.  **Handle Unmatched Cases:**
+        *   Use a `default` or wildcard `_` clause to execute code when no other case clause matches.
+
+    7.  **Enable Exhaustiveness Checking (for Sealed Classes):**
+        *   Apply the `sealed` modifier to a class to enable exhaustiveness checking when switching over its subtypes. This will inform you if a new subclass is added and the switch expression is incomplete.
+
+    8.  **Destructure and Assign Variables:**
+        *   When a pattern matches, it can destructure the value and bind it to new local variables.
+        *   Use a variable assignment pattern on the left side of an assignment to destructure an object and assign values to existing variables instead of binding new ones. This can be used to swap variable values.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/language/refs/heads/main/accepted/3.0/patterns/feature-specification.md
+    - https://dart.dev/language/collections
+    - https://dart.dev/language/pattern-types
+    - https://dart.dev/language/patterns
