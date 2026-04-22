@@ -73,3 +73,52 @@
     - https://dart.dev/language/collections
     - https://dart.dev/language/pattern-types
     - https://dart.dev/language/patterns
+- name: dart-run-static-analysis
+  description: Execute `dart analyze` to identify warnings and errors, and use
+   `dart fix --apply` to automatically resolve mechanical lint issues. Use during
+    development to ensure code quality and before committing changes.
+  instructions: |
+    1.  **Analyze the project's Dart source code**:
+        *   Use the `dart analyze` command to perform static analysis.
+        *   You can run `dart analyze` over all Dart files in the current directory.
+        *   Alternatively, you can specify a directory or a single Dart file as an argument, for example, `dart analyze bin`.
+        *   The `dart analyze` command is available whether you download the Dart SDK explicitly or only the Flutter SDK.
+        *   The analyzer uses the `analyzer` package to perform static analysis and can be customized to look for various potential problems, including errors and warnings specified in the Dart language spec.
+        *   It can also configure linter rules to ensure code complies with the Dart Style Guide and Effective Dart guidelines.
+        *   By default, the analyzer reports failure for errors or warnings, but not for info-level issues. This behavior can be customized using flags like `--fatal-infos` and `--no-fatal-warnings`.
+        *   Analyzer plugins can extend the Dart analyzer to report custom diagnostics (lints and warnings), offer quick fixes, and provide assists. These plugins are available in your IDE and when running `dart analyze` or `flutter analyze`.
+        *   You can enable an analyzer plugin by adding it to the `plugins` section of your `analysis_options.yaml` file.
+        *   Static analysis helps reveal type-related bugs at compile time that might be tricky to find at runtime. It also contributes to more readable and maintainable code, and better ahead-of-time (AOT) compilation.
+
+    2.  **Apply automated fixes to Dart source code**:
+        *   Use the `dart fix` command to apply automated fixes.
+        *   To apply the proposed changes, use the `--apply` flag: `dart fix --apply`.
+        *   To preview proposed changes without applying them, use the `--dry-run` flag: `dart fix --dry-run`.
+        *   `dart fix` applies fixes when a "problem" is identified by a diagnostic.
+        *   Some diagnostics, like compilation errors, are implicitly enabled, while others, such as lints, must be explicitly enabled in the `analysis_options.yaml` file.
+        *   Enabling additional lints can sometimes increase the number of fixes that can be applied.
+        *   Not all diagnostics have associated fixes.
+        *   `dart fix` can be used to resolve outdated API usages when updating to newer Dart and Flutter SDKs.
+        *   For example, in Dart 3 migration, `dart fix --apply --code=obsolete_colon_for_default_value` can automate the migration of colon-syntax for default values to the equals syntax.
+        *   Quick fixes, which are automated edits to resolve issues reported by linter rules, can be applied using `dart fix` or an editor with Dart support.
+
+    3.  **Customize static analysis (optional)**:
+        *   You can customize the behavior of the analyzer using an `analysis_options.yaml` file or comments in Dart source code.
+        *   Place the `analysis_options.yaml` file at the root of the package, in the same directory as the `pubspec` file.
+        *   To exclude files from static analysis, use the `exclude:` analyzer option in `analysis_options.yaml`, listing individual files or using glob patterns.
+        *   To ignore a specific non-error diagnostic for a file, add an `// ignore_for_file:` comment to the file, for example, `// ignore_for_file: unused_local_variable`. This comment acts for the whole file.
+        *   To suppress a diagnostic for a single line, you can use `// ignore: some_plugin/some_code`.
+        *   To suppress a diagnostic for an entire file, you can use `// ignore_for_file: some_plugin/some_code`.
+        *   You can also disable specific rules for all files or change the severity of rules.
+        *   To prevent implicit downcasts from `dynamic` and avoid runtime `TypeError` issues, consider enabling the analyzer's strict casts mode in `analysis_options.yaml` by setting `analyzer: language: strict-casts: true`.
+  resources:
+    - https://pub.dev/packages/analyzer
+    - https://dart.dev/tools/analysis
+    - https://dart.dev/tools/analyzer-performance
+    - https://dart.dev/tools/analyzer-plugins
+    - https://dart.dev/tools/dart-analyze
+    - https://dart.dev/tools/dart-fix
+    - https://dart.dev/tools/dart-format
+    - https://dart.dev/tools/dart-run
+    - https://dart.dev/tools/dart-tool
+    - https://dart.dev/tools/linter-rules
