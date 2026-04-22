@@ -186,3 +186,58 @@
     - https://dart.dev/tools/dart-run
     - https://dart.dev/tools/dart-tool
     - https://dart.dev/tools/pub/cmd/pub-global
+- name: dart-resolve-package-conflicts
+  description: Workflow for fixing package version conflicts. Use this when `pub
+    get` fails due to incompatible package versions.
+  instructions: |
+    **1. Understand the Problem:**
+    *   Dart does not allow multiple versions of the same package to be used together, which can lead to dependency conflicts.
+    *   Version lock occurs when packages are disincentivized to upgrade their dependencies because it would force all users to upgrade as well. To address this, Dart loosens the constraints packages place on their dependencies.
+    *   If `pub` cannot find a set of concrete versions that work for your app, it will report an error.
+
+    **2. Identify Outdated Packages:**
+    *   Use `dart pub outdated` to identify dependencies that are not on the latest stable versions. This command shows the "Current," "Upgradable," "Resolvable," and "Latest" versions of your packages.
+        *   "Upgradable" refers to the latest version allowed by your `pubspec.yaml` file, which `dart pub upgrade` will resolve to.
+        *   "Resolvable" is the latest version that can be resolved considering all other dependencies.
+        *   "Latest" is the absolute latest version available, excluding prereleases unless specified.
+    *   When editing `pubspec.yaml`, generally update dependencies and `dev_dependencies` to use the versions in the "Resolvable" column.
+
+    **3. Update Dependencies:**
+    *   **Upgrade to the latest compatible versions:**
+        *   Run `dart pub upgrade` to update to the latest package versions allowed by your `pubspec`. This command gets the newest compatible and non-retracted version available.
+        *   If `dart pub upgrade` resolves an "Upgradable" dependency, it will update the `pubspec.lock` file.
+    *   **Tighten `dev_dependencies` constraints:**
+        *   Set the version constraints of packages in `dev_dependencies` to have a lower bound of the latest version your package depends on. This can involve setting them to the latest patch versions, for example, `build_runner: ^2.10.4`.
+    *   **Modify `pubspec.yaml` for "Resolvable" versions:**
+        *   If a package is listed as "Resolvable" but not "Upgradable" by `dart pub outdated`, you might need to manually edit the `pubspec.yaml` file to use the version in the "Resolvable" column (or a compatible higher version). For example, change `http: ^0.11.0` to `http: ^0.12.1`. After editing, run `dart pub upgrade` to update the `pubspec.lock` file.
+    *   **Upgrade outside specified constraints:**
+        *   If no alternative version satisfies the current version constraint, edit the version constraint in the `pubspec.yaml` file and then run `dart pub upgrade`.
+
+    **4. Manage `pubspec.lock`:**
+    *   `pubspec.lock` specifies the exact versions of each dependency.
+    *   You can delete the entire package entry for a package with a retracted version in `pubspec.lock` and then run `dart pub get` to get the newest compatible and non-retracted version.
+    *   While deleting the entire `pubspec.lock` file and running `dart pub get` is an option, it is not recommended as it might change versions for other dependencies.
+    *   `dart pub get` will unlock enough locked dependency versions to make a resolution possible if new dependencies are added/removed, a locked version no longer exists, or the Dart SDK version changes. It will also notify you of dependency changes relative to the existing `pubspec.lock`.
+    
+    **5. Best Practices for Dependency Management:**
+    *   Be proactive in managing dependencies.
+    *   Ensure packages depend on the freshest versions when possible, as stale packages can negatively impact stability, performance, and quality.
+    *   Use caret syntax (`^`) for specifying dependencies, as it allows `pub` to select newer versions while placing an upper bound.
+    *   Use `dart pub upgrade --tighten` to update dependencies to the latest versions if constraints need to be bumped.
+
+  resources:
+    - https://dart.dev/language/versioning
+    - https://dart.dev/tools/pub/cmd
+    - https://dart.dev/tools/pub/cmd/pub-add
+    - https://dart.dev/tools/pub/cmd/pub-deps
+    - https://dart.dev/tools/pub/cmd/pub-downgrade
+    - https://dart.dev/tools/pub/cmd/pub-get
+    - https://dart.dev/tools/pub/cmd/pub-outdated
+    - https://dart.dev/tools/pub/cmd/pub-remove
+    - https://dart.dev/tools/pub/cmd/pub-unpack
+    - https://dart.dev/tools/pub/cmd/pub-upgrade
+    - https://dart.dev/tools/pub/dependencies
+    - https://dart.dev/tools/pub/packages
+    - https://dart.dev/tools/pub/publishing
+    - https://dart.dev/tools/pub/versioning
+    - https://dart.dev/tools/pub/workspaces
