@@ -241,3 +241,34 @@
     - https://dart.dev/tools/pub/publishing
     - https://dart.dev/tools/pub/versioning
     - https://dart.dev/tools/pub/workspaces
+- name: dart-fix-static-analysis-errors
+  description: Workflow for identifying and fixing static analysis errors. Use
+    this after modifying code or if `dart analyze` fails.
+  instructions: |
+    1.  **Identify Static Analysis Errors:**
+        *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
+        *   Alternatively, specify a directory or a single Dart file to analyze, for example, `$ dart analyze bin`.
+        *   Customize how the analyzer treats warnings and info-level issues; by default, it reports failure for errors and warnings but not info-level issues. You can use flags like `--fatal-infos` to make the analyzer fail on info-level issues.
+        *   If working with mixed-version code or older Dart versions (e.g., 2.9) that might pass null values where the analyzer expects non-nullable types, consider disabling sound null safety temporarily using `--no-sound-null-safety` with `dart run` or `flutter run`, or by setting the language version in the entrypoint file to 2.9.
+
+    2.  **Fix Static Analysis Errors:**
+        *   **Address Null Safety Issues:** Eliminate static errors related to null safety by adding `?`, `!`, `required`, and `late` as needed. For instance, use `late` for variables that are guaranteed to be initialized before use, especially top-level or instance variables where Dart's control flow analysis might not detect initialization.
+        *   **Correct Type System Issues:**
+            *   Fix most static analysis errors by adding type annotations to generic classes, especially common collection types like `List<T>` and `Map<K,V>`.
+            *   Ensure sound return types and parameter types when overriding methods.
+            *   Avoid using a `dynamic` list as a typed list.
+            *   If an implicit downcast from a non-`dynamic` type is disallowed by static analysis (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast like `as List<Cat>`. Be aware that explicit casts can still fail at runtime if the actual type doesn't match.
+            *   To prevent implicit downcasts from `dynamic` and avoid runtime errors, consider enabling `strict-casts` mode in your `analysis_options.yaml` file.
+        *   **Utilize Type Inference:** The analyzer can infer types for fields, methods, local variables, and most generic type arguments, which can help in writing sound Dart code. If the analyzer lacks sufficient information, it defaults to the `dynamic` type.
+
+    3.  **Verify Fixes:**
+        *   Re-run the Dart analyzer to confirm that the static analysis errors have been resolved.
+        *   Test or run your code to ensure that the fixes haven't introduced new runtime errors, especially when dealing with explicit casts or `late` variables that might not be initialized.
+  resources:
+    - https://dart.dev/null-safety/understanding-null-safety
+    - https://dart.dev/null-safety/unsound-null-safety
+    - https://dart.dev/tools/analysis
+    - https://dart.dev/tools/analyzer-performance
+    - https://dart.dev/tools/dart-analyze
+    - https://dart.dev/tools/dart-fix
+    - https://dart.dev/tools/linter-rules
