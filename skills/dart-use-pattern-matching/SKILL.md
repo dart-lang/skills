@@ -3,83 +3,101 @@ name: dart-use-pattern-matching
 description: Use switch expressions and pattern matching where appropriate
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Wed, 22 Apr 2026 19:41:06 GMT
+  last_modified: Fri, 24 Apr 2026 15:08:55 GMT
 ---
 # Implementing Dart Patterns
 
 ## Contents
-- [Decision Matrix: Switch Statements vs. Expressions](#decision-matrix-switch-statements-vs-expressions)
-- [Applying Pattern Types](#applying-pattern-types)
-- [Workflow: Implementing Algebraic Data Types (ADTs)](#workflow-implementing-algebraic-data-types-adts)
-- [Workflow: Validating and Destructuring JSON](#workflow-validating-and-destructuring-json)
+- [Pattern Selection Strategy](#pattern-selection-strategy)
+- [Switch Statements vs. Expressions](#switch-statements-vs-expressions)
+- [Core Pattern Implementations](#core-pattern-implementations)
+- [Workflows](#workflows)
 - [Examples](#examples)
 
-## Decision Matrix: Switch Statements vs. Expressions
+## Pattern Selection Strategy
 
-Apply the correct switch construct based on the execution context:
+Apply specific pattern types based on the data structure and desired outcome. Follow these conditional guidelines:
 
-*   **If producing a value:** Use a **Switch Expression**. Use `=>` to separate cases from single-expression bodies. Do not use `default`; use the wildcard `_` for unmatched cases.
-*   **If executing side-effects or statements:** Use a **Switch Statement**. Use `:` to separate cases from statement bodies. Allow empty cases to fall through to share a body. Use `break` to prevent fall-through in empty cases.
-*   **If testing a single value against a single pattern:** Use an **If-Case Statement** (`if (value case pattern) { ... }`).
+*   **If validating and extracting from deserialized data (e.g., JSON):** Use Map and List patterns to simultaneously check structure and destructure key-value pairs.
+*   **If handling multiple return values:** Use Record patterns to destructure fields directly into local variables.
+*   **If executing type-specific behavior (Algebraic Data Types):** Use Object patterns combined with `sealed` classes to ensure exhaustiveness.
+*   **If matching numeric ranges or conditions:** Use Relational (`>=`, `<=`) and Logical-and (`&&`) patterns.
+*   **If multiple cases share logic:** Use Logical-or (`||`) patterns to share a single case body or guard clause.
+*   **If ignoring specific values:** Use the Wildcard pattern (`_`) or a non-matching Rest element (`...`) in collections.
 
-## Applying Pattern Types
+## Switch Statements vs. Expressions
 
-Implement specific pattern types to handle complex matching and destructuring operations:
+Select the appropriate switch construct based on the execution context:
 
-*   **Logical-or (`||`):** Share a body or guard across multiple cases. Ensure both branches define the exact same set of variables.
-*   **Logical-and (`&&`):** Match multiple conditions simultaneously. Ensure variables defined in each branch do not overlap.
-*   **Relational (`>=`, `<=`, `==`):** Match numeric ranges or specific constant comparisons.
-*   **Record (`(x: var a, y: var b)`):** Destructure record fields. Omit the field name to infer it from the variable pattern (e.g., `(:var x, :var y)`).
-*   **List (`[a, b, ...rest]`):** Destructure arrays. Use the rest element (`...`) to capture remaining elements into a new list.
-*   **Map (`{"key": var value}`):** Destructure key-value pairs. Map patterns ignore unmatched keys automatically.
-*   **Object (`ClassName(field: var x)`):** Destructure class instances using their getters.
-*   **Wildcard (`_`):** Ignore parts of a matched value.
-*   **Null-check (`?`):** Match only if the value is non-null, binding the variable to the non-nullable base type.
-*   **Null-assert (`!`):** Force a match on non-null values, throwing an exception if the value is null.
-*   **Cast (`as`):** Forcibly assert the expected type of a destructured value during the match.
+*   **If producing a value:** Use a **switch expression**.
+    *   Syntax: `switch (value) { pattern => expression, }`
+    *   Rule: Each case must be a single expression. No implicit fallthrough. Must be exhaustive.
+*   **If executing statements or side effects:** Use a **switch statement**.
+    *   Syntax: `switch (value) { case pattern: statements; }`
+    *   Rule: Empty cases fall through to the next case. Non-empty cases implicitly break (no `break` keyword required).
 
-## Workflow: Implementing Algebraic Data Types (ADTs)
+## Core Pattern Implementations
 
-Use this workflow to model and process families of related types using exhaustive pattern matching.
+Implement patterns using the following syntax and rules:
 
-**Task Progress:**
-- [ ] 1. Define a `sealed` base class to enable compiler exhaustiveness checking.
-- [ ] 2. Define subclasses extending or implementing the `sealed` base class.
-- [ ] 3. Implement a Switch Expression that takes the base class as input.
-- [ ] 4. Write an Object Pattern case for every subclass, destructuring necessary properties.
-- [ ] 5. Run validator -> review exhaustiveness errors -> fix missing subclass cases.
+*   **Logical-or (`||`):** `pattern1 || pattern2`. Both branches must define the exact same set of variables.
+*   **Logical-and (`&&`):** `pattern1 && pattern2`. Branches must *not* define overlapping variables.
+*   **Relational:** `==`, `!=`, `<`, `>`, `<=`, `>=` followed by a constant expression.
+*   **Cast (`as`):** `pattern as Type`. Throws if the value does not match the type. Use to forcibly assert types during destructuring.
+*   **Null-check (`?`):** `pattern?`. Fails the match if the value is null. Binds the variable to the non-nullable base type.
+*   **Null-assert (`!`):** `pattern!`. Throws if the value is null.
+*   **Variable:** `var name` or `Type name`. Binds the matched value to a new local variable.
+*   **Wildcard (`_`):** Matches any value and discards it.
+*   **List:** `[pattern1, pattern2]`. Matches lists of exact length unless a Rest element (`...` or `...var rest`) is used.
+*   **Map:** `{"key": pattern}`. Matches maps containing the specified keys. Ignores unmatched keys.
+*   **Record:** `(pattern1, named: pattern2)`. Matches records of the exact shape. Use `:var name` to infer the getter name.
+*   **Object:** `ClassName(field: pattern)`. Matches instances of `ClassName`. Use `:var field` to infer the getter name.
 
-## Workflow: Validating and Destructuring JSON
+## Workflows
 
-Use this workflow to safely parse dynamic or untyped data structures.
+### Task Progress: Implementing Pattern Matching
+Copy this checklist to track progress when implementing complex pattern matching logic:
 
-**Task Progress:**
-- [ ] 1. Implement an If-Case Statement to evaluate the incoming dynamic data.
-- [ ] 2. Define a Map Pattern matching the expected JSON schema.
-- [ ] 3. Nest List, Record, or Object patterns within the Map Pattern to validate deep structures.
-- [ ] 4. Bind extracted values to strongly-typed local variables within the pattern.
-- [ ] 5. Implement an `else` block to handle validation failures.
-- [ ] 6. Run validator -> review type cast/match errors -> fix schema mismatches.
+- [ ] Identify the data structure being evaluated (JSON, Record, Class, Enum).
+- [ ] Select the appropriate switch construct (Expression for values, Statement for side-effects).
+- [ ] Define the required patterns (Object, Map, List, Record).
+- [ ] Extract required data using Variable patterns (`var x`, `:var y`).
+- [ ] Apply Guard clauses (`when condition`) for logic that cannot be expressed via patterns.
+- [ ] Handle unmatched cases using a Wildcard (`_`) or `default` clause (if not using a sealed class).
+- [ ] Run exhaustiveness validator.
+
+### Feedback Loop: Exhaustiveness Checking
+When switching over `sealed` classes or enums, you must ensure all subtypes are handled.
+
+1. **Run validator:** Execute `dart analyze`.
+2. **Review errors:** Look for "The type 'X' is not exhaustively matched by the switch cases" errors.
+3. **Fix:** Add the missing Object patterns for the unhandled subtypes, or add a Wildcard (`_`) case if a default fallback is acceptable.
 
 ## Examples
 
-### High-Fidelity JSON Validation
-Validate and destructure a complex JSON payload in a single statement.
+### JSON Validation and Destructuring
+Use Map and List patterns to validate structure and extract data in a single step.
 
+**Input:**
 ```dart
-void processPayload(dynamic json) {
-  if (json case {'user': [String name, int age]} when age >= 18) {
-    // 'name' and 'age' are strongly typed and guaranteed valid.
-    print('Authorized adult user: $name ($age)');
-  } else {
-    throw FormatException('Invalid payload or unauthorized user.');
-  }
+var data = {
+  'user': ['Lily', 13],
+};
+```
+
+**Implementation:**
+```dart
+if (data case {'user': [String name, int age]}) {
+  print('User $name is $age years old.');
+} else {
+  print('Invalid JSON structure.');
 }
 ```
 
-### Exhaustive ADT Switch Expression
-Model shapes and calculate area using a `sealed` class and Object Patterns.
+### Algebraic Data Types (Sealed Classes)
+Use Object patterns with switch expressions to handle family types exhaustively.
 
+**Implementation:**
 ```dart
 sealed class Shape {}
 
@@ -93,32 +111,36 @@ class Circle implements Shape {
   Circle(this.radius);
 }
 
+// Switch expression guarantees exhaustiveness due to `sealed` modifier.
 double calculateArea(Shape shape) => switch (shape) {
   Square(length: var l) => l * l,
-  Circle(radius: var r) => math.pi * r * r,
+  Circle(:var radius)   => math.pi * radius * radius,
 };
 ```
 
-### Variable Swapping via Destructuring
-Swap variables in-place using a variable assignment pattern.
+### Variable Swapping and Destructuring
+Use variable assignment patterns to swap values or extract record fields without temporary variables.
 
+**Implementation:**
 ```dart
-void swapCoordinates() {
-  var (x, y) = ('left', 'right');
-  (y, x) = (x, y); 
-}
+var (a, b) = ('left', 'right');
+(b, a) = (a, b); // Swap values
+
+// Destructuring a function return
+var (name, age) = getUserInfo(); 
 ```
 
-### Guard Clauses and Logical-Or
-Combine patterns and guards to handle complex shared logic.
+### Guard Clauses and Logical-or
+Use `when` to evaluate arbitrary conditions after a pattern matches.
 
+**Implementation:**
 ```dart
-void evaluateShape(Shape shape) {
-  switch (shape) {
-    case Square(length: var s) || Circle(radius: var s) when s > 0:
-      print('Valid symmetric shape with size $s');
-    case Square() || Circle():
-      print('Empty shape');
-  }
+switch (shape) {
+  case Square(size: var s) || Circle(size: var s) when s > 0:
+    print('Valid symmetric shape with size $s');
+  case Square() || Circle():
+    print('Invalid or empty shape');
+  default:
+    print('Unknown shape');
 }
 ```

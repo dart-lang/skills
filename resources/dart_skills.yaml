@@ -19,6 +19,7 @@
         *   If you are working on Flutter code, use the `flutter test` command instead.
         *   Note that `dart test` will not run tests in an `integration_test` directory by default; you will need to explicitly run them with `dart test integration_test`.
   resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
     - https://pub.dev/packages/test
     - https://dart.dev/tools/dart-test
     - https://dart.dev/tools/testing
@@ -112,6 +113,7 @@
         *   You can also disable specific rules for all files or change the severity of rules.
         *   To prevent implicit downcasts from `dynamic` and avoid runtime `TypeError` issues, consider enabling the analyzer's strict casts mode in `analysis_options.yaml` by setting `analyzer: language: strict-casts: true`.
   resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
     - https://pub.dev/packages/analyzer
     - https://dart.dev/tools/analysis
     - https://dart.dev/tools/analyzer-performance
@@ -226,6 +228,7 @@
     *   Use `dart pub upgrade --tighten` to update dependencies to the latest versions if constraints need to be bumped.
 
   resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
     - https://dart.dev/language/versioning
     - https://dart.dev/tools/pub/cmd
     - https://dart.dev/tools/pub/cmd/pub-add
@@ -265,6 +268,7 @@
         *   Re-run the Dart analyzer to confirm that the static analysis errors have been resolved.
         *   Test or run your code to ensure that the fixes haven't introduced new runtime errors, especially when dealing with explicit casts or `late` variables that might not be initialized.
   resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
     - https://dart.dev/null-safety/understanding-null-safety
     - https://dart.dev/null-safety/unsound-null-safety
     - https://dart.dev/tools/analysis
@@ -272,3 +276,74 @@
     - https://dart.dev/tools/dart-analyze
     - https://dart.dev/tools/dart-fix
     - https://dart.dev/tools/linter-rules
+- name: dart-fix-runtime-errors
+  description: Uses get_runtime_errors and lsp to fetch an active stack trace,
+    locate the failing line, apply a fix, and verify resolution via hot_reload.
+  instructions: |
+    1.  **Identify Static Analysis Errors:**
+        *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
+        *   Alternatively, specify a directory or a single Dart file to analyze, for example, `$ dart analyze bin`.
+        *   Customize how the analyzer treats warnings and info-level issues; by default, it reports failure for errors and warnings but not info-level issues. You can use flags like `--fatal-infos` to make the analyzer fail on info-level issues.
+        *   If working with mixed-version code or older Dart versions (e.g., 2.9) that might pass null values where the analyzer expects non-nullable types, consider disabling sound null safety temporarily using `--no-sound-null-safety` with `dart run` or `flutter run`, or by setting the language version in the entrypoint file to 2.9.
+
+    2.  **Fix Static Analysis Errors:**
+        *   **Address Null Safety Issues:** Eliminate static errors related to null safety by adding `?`, `!`, `required`, and `late` as needed. For instance, use `late` for variables that are guaranteed to be initialized before use, especially top-level or instance variables where Dart's control flow analysis might not detect initialization.
+        *   **Correct Type System Issues:**
+            *   Fix most static analysis errors by adding type annotations to generic classes, especially common collection types like `List<T>` and `Map<K,V>`.
+            *   Ensure sound return types and parameter types when overriding methods.
+            *   Avoid using a `dynamic` list as a typed list.
+            *   If an implicit downcast from a non-`dynamic` type is disallowed by static analysis (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast like `as List<Cat>`. Be aware that explicit casts can still fail at runtime if the actual type doesn't match.
+            *   To prevent implicit downcasts from `dynamic` and avoid runtime errors, consider enabling `strict-casts` mode in your `analysis_options.yaml` file.
+        *   **Utilize Type Inference:** The analyzer can infer types for fields, methods, local variables, and most generic type arguments, which can help in writing sound Dart code. If the analyzer lacks sufficient information, it defaults to the `dynamic` type.
+
+    3.  **Verify Fixes:**
+        *   Re-run the Dart analyzer to confirm that the static analysis errors have been resolved.
+        *   Test or run your code to ensure that the fixes haven't introduced new runtime errors, especially when dealing with explicit casts or `late` variables that might not be initialized.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://dart.dev/language/error-handling
+    - https://dart.dev/language/type-system
+    - https://dart.dev/language/variables
+    - https://dart.dev/learn/tutorial/error-handling
+    - https://dart.dev/tools
+    - https://dart.dev/tools/analyzer-performance
+    - https://dart.dev/tools/dart-fix
+    - https://dart.dev/tools/linter-rules/avoid_catching_errors
+- name: dart-generate-test-mocks
+  description: Define and generate mock objects for external dependencies using
+    `package:mockito` and `build_runner`. Use when unit testing classes that
+    depend on complex external services like APIs or databases.
+  instructions: |
+    1. **Understand Mocking with `package:mockito`**: `package:mockito` provides a way to create mock objects that can be easily configured for fixed scenarios. It also allows verification that the system under test interacts with the mock object in expected ways. An example using both `package:test` and `package:mockito` can be found in the International Space Station API library and its unit tests within the `mockito` package.
+    2. **Utilize `build_runner`**: `build_runner` is a command-line tool that can be used for various tasks, including code generation.
+    3. **Define Dependencies**: When dealing with external services like APIs or databases, you might need to fetch data from the internet. This often involves using packages like `package:http`. To add `package:http` as a dependency, you would run `dart pub add http`. You would then import it into your code, optionally with a library prefix like `import 'package:http/http.dart' as http;`. URLs are represented by `Uri` objects in Dart, and `Uri.parse` is a common way to create them from a string.
+    4. **Structure Your Code for Testing**: Dart is an object-oriented language with classes and mixin-based inheritance. Every object is an instance of a class, and all classes except `Null` descend from `Object`. Classes have members, including functions (methods) and data (instance variables). You can define instance variables within a class.
+    5. **Generate Mocks**: The `build_runner` tool will be used to generate the mock objects based on your definitions.
+    6. **Integrate Mocks into Unit Tests**: Use the generated mock objects in your unit tests to isolate the class being tested from its complex external dependencies. `package:test` provides a standard way of writing tests in Dart, allowing you to write single tests or groups of tests, asynchronous tests, and tag tests.
+    7. Run tests and ensure that they pass.
+
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://pub.dev/packages/mockito
+    - https://pub.dev/packages/build_runner
+    - https://dart.dev/tools/testing
+- name: dart-collect-coverage
+  description: Collect coverage using the coverage packge and create an LCOV report
+  instructions: |
+    1. Add the coverage package as a dev_dependency
+    2. Collect coverage using the coverage package
+    3. Create an LCOV report using the coverage package
+  resources:
+    - https://pub.dev/packages/coverage
+    - https://dart.dev/tools/testing
+- name: dart-migrate-to-checks-package
+  description: Replace the usage of `expect` and similar functions from `package:matcher` to `package:checks` equivalents.
+  instructions: |
+    1. Add `package:checks` as a dev dependency
+    2. Replace matcher expectations with checks expectations.
+    3. Run the static analyzer to fix static analysis warnings
+    4. Run tests and fix any failing tests.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://pub.dev/packages/checks
+    - https://pub.dev/packages/matcher

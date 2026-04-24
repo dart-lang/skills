@@ -3,23 +3,117 @@ name: dart-fix-static-analysis-errors
 description: Workflow for identifying and fixing static analysis errors. Use this after modifying code or if `dart analyze` fails.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Wed, 22 Apr 2026 20:54:44 GMT
+  last_modified: Fri, 24 Apr 2026 15:12:12 GMT
 ---
 # Resolving Dart Static Analysis Errors
 
 ## Contents
-- [Configuring Static Analysis](#configuring-static-analysis)
-- [Enforcing Type Safety and Null Safety](#enforcing-type-safety-and-null-safety)
-- [Suppressing Diagnostics](#suppressing-diagnostics)
-- [Workflow: Standard Analysis and Fix Loop](#workflow-standard-analysis-and-fix-loop)
-- [Workflow: Migrating to Sound Null Safety](#workflow-migrating-to-sound-null-safety)
+- [Diagnostic Execution](#diagnostic-execution)
+- [Null Safety & Type Resolution](#null-safety--type-resolution)
+- [Flow Analysis & Type Promotion](#flow-analysis--type-promotion)
+- [Analyzer Configuration](#analyzer-configuration)
+- [Workflow: Static Analysis Remediation](#workflow-static-analysis-remediation)
 - [Examples](#examples)
 
-## Configuring Static Analysis
+## Diagnostic Execution
 
-Configure the Dart analyzer using `analysis_options.yaml` at the package root. Enforce strict type checking to prevent implicit downcasts and un-inferred dynamic types.
+Execute the Dart analyzer to identify static errors, warnings, and informational diagnostics across the codebase.
 
-Include standard rule sets (`lints/recommended.yaml` or `flutter_lints/recommended.yaml`) and enable strict language modes.
+*   Run `$ dart analyze` to evaluate all Dart files in the current directory.
+*   Target specific directories or files by appending the path: `$ dart analyze bin` or `$ dart analyze lib/main.dart`.
+*   Enforce strictness by failing on info-level issues using the `--fatal-infos` flag.
+*   Apply automated quick-fixes for supported diagnostics using `$ dart fix --apply`. Preview changes first with `$ dart fix --dry-run`.
+
+## Null Safety & Type Resolution
+
+Address static errors related to Dart's sound null safety and strict type system.
+
+*   **Nullability:** Append `?` to types to explicitly allow `null` (e.g., `String?`).
+*   **Assertion:** Use the postfix bang operator `!` to cast a nullable expression to its underlying non-nullable type when you can guarantee it is not null.
+*   **Delayed Initialization:** Apply the `late` modifier to non-nullable top-level or instance variables that are guaranteed to be initialized before their first read, bypassing the analyzer's definite assignment checks.
+*   **Named Parameters:** Use the `required` modifier for named parameters that do not have a default value and cannot be null.
+*   **Explicit Downcasts:** If static analysis disallows an implicit downcast (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast: `as List<Cat>`.
+*   **Generic Types:** Always provide explicit type annotations to generic classes (e.g., `List<String>`, `Map<String, dynamic>`). Avoid using a raw `List` or `Map` which defaults to `dynamic`.
+
+## Flow Analysis & Type Promotion
+
+Leverage Dart's control flow analysis to safely promote nullable types to non-nullable types without manual casting.
+
+*   **Null Checks:** Check a local variable against `null` (e.g., `if (value != null)`) to automatically promote it to a non-nullable type within that block.
+*   **Type Tests:** Use the `is` operator (e.g., `if (value is String)`) to promote a variable to a specific subclass or type.
+*   **Early Returns:** Use early returns, `break`, or `throw` to exit a control flow path if a variable is null or the wrong type. The analyzer will promote the variable for the remainder of the scope.
+*   **Reachability:** Use the `Never` type for functions that unconditionally throw exceptions or terminate the process. The analyzer uses this to determine unreachable code paths.
+
+## Analyzer Configuration
+
+Configure the `analysis_options.yaml` file at the package root to enforce stricter type checks and customize linter rules.
+
+*   Enable `strict-casts: true` to prevent implicit downcasts from `dynamic`.
+*   Enable `strict-inference: true` to prevent the analyzer from falling back to `dynamic` when it cannot infer a type.
+*   Enable `strict-raw-types: true` to require explicit type arguments on generic types.
+*   Suppress specific diagnostics in a file using `// ignore_for_file: <diagnostic_name>`.
+*   Suppress a diagnostic on a specific line using `// ignore: <diagnostic_name>`.
+
+## Workflow: Static Analysis Remediation
+
+Follow this sequential workflow to resolve static analysis errors in a Dart project.
+
+### Task Progress Checklist
+Copy this checklist to track your progress:
+- [ ] Run `$ dart analyze` to establish a baseline of errors.
+- [ ] Run `$ dart fix --apply` to resolve automatically fixable issues.
+- [ ] Address remaining Null Safety errors (`?`, `!`, `late`, `required`).
+- [ ] Address remaining Type System errors (explicit `as` casts, generic type annotations).
+- [ ] Run `$ dart analyze` to verify all errors are resolved.
+- [ ] Execute tests or run the application to ensure fixes did not introduce runtime exceptions (e.g., failed `as` casts or uninitialized `late` variables).
+
+### Conditional Logic
+*   **If working with mixed-version code (legacy Dart 2.9):** Disable sound null safety temporarily by passing `--no-sound-null-safety` to `dart run` or `flutter run`, or by adding `// @dart=2.9` to the top of the entrypoint file.
+*   **If a field is private and final:** Rely on flow analysis for type promotion.
+*   **If a field is public or non-final:** Flow analysis cannot promote it. Copy the field to a local variable first, check the local variable for null, and use the local variable.
+
+### Feedback Loop
+1. **Run Validator:** `$ dart analyze`
+2. **Review Errors:** Identify the file, line number, and diagnostic code.
+3. **Fix:** Apply the appropriate null safety or type resolution fix.
+4. **Repeat:** Continue until `$ dart analyze` returns "No issues found!".
+
+## Examples
+
+### Type Promotion via Local Variable Assignment
+When dealing with nullable instance fields, copy to a local variable to enable flow analysis.
+
+**Incorrect (Fails Analysis):**
+```dart
+class Coffee {
+  String? _temperature;
+
+  void checkTemp() {
+    if (_temperature != null) {
+      // ERROR: Property cannot be promoted because it is not a local variable.
+      print(_temperature.length); 
+    }
+  }
+}
+```
+
+**Correct:**
+```dart
+class Coffee {
+  String? _temperature;
+
+  void checkTemp() {
+    final temp = _temperature; // Copy to local variable
+    if (temp != null) {
+      // SUCCESS: 'temp' is promoted to non-nullable String.
+      print(temp.length); 
+    }
+  }
+}
+```
+
+### Strict Analyzer Configuration
+Implement the following `analysis_options.yaml` to enforce strict type safety.
 
 ```yaml
 include: package:lints/recommended.yaml
@@ -30,109 +124,7 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
   errors:
-    invalid_assignment: warning
+    invalid_assignment: error
     missing_return: error
-
-linter:
-  rules:
-    - always_declare_return_types
-    - cancel_subscriptions
-    - close_sinks
-```
-
-## Enforcing Type Safety and Null Safety
-
-Address static analysis errors by explicitly managing nullability and types.
-
-*   **Null Safety Modifiers:** Use `?` for nullable types, `!` to cast away nullability (use sparingly), `required` for mandatory named parameters, and `late` for variables initialized after declaration but before use.
-*   **Type Annotations:** Add explicit type annotations to generic classes (`List<T>`, `Map<K, V>`). Never use a `dynamic` list as a typed list.
-*   **Explicit Downcasts:** If implicit downcasts are disallowed (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast (`as List<Cat>`).
-*   **Flow Analysis:** Use `== null` or `!= null` checks to promote nullable local variables to non-nullable types within the guarded scope. Note: Flow-based type promotion only applies to local variables, parameters, and private final fields.
-*   **Late Initialization:** Use `late` to defer initialization of non-nullable fields. Combine `late final` for variables assigned exactly once at runtime.
-*   **Never Type:** Use the `Never` type for functions that unconditionally throw exceptions or abort execution, extending Dart's reachability analysis.
-
-## Suppressing Diagnostics
-
-When a diagnostic is a known false positive or originates from generated code, suppress it using specific comments.
-
-*   **File-level:** Add `// ignore_for_file: <rule_name>` at the top of the file.
-*   **Line-level:** Add `// ignore: <rule_name>` directly above or appended to the offending line.
-*   **Pubspec:** Add `# ignore: <rule_name>` above the offending line in `pubspec.yaml`.
-
-## Workflow: Standard Analysis and Fix Loop
-
-Use this workflow to identify, automatically fix, and manually resolve static analysis errors.
-
-**Task Progress:**
-- [ ] Run `dart analyze` to identify static errors across the project.
-- [ ] Run `dart fix --apply` to automatically resolve standard linting and formatting issues.
-- [ ] Review remaining errors from the analyzer output.
-- [ ] **Conditional:** If the error is a null safety issue, apply `?`, `!`, `late`, or `required`.
-- [ ] **Conditional:** If the error is an implicit downcast, add an explicit `as T` cast or correct the generic type annotation.
-- [ ] **Conditional:** If the error is an un-promoted class field, copy the field to a local variable, check for null, and use the local variable.
-- [ ] **Feedback Loop:** Run `dart analyze` -> review errors -> fix -> repeat until the analyzer reports 0 issues.
-- [ ] Run tests (`dart test` or `flutter test`) to ensure explicit casts or `late` variables have not introduced runtime exceptions.
-
-## Workflow: Migrating to Sound Null Safety
-
-Use this workflow when dealing with legacy codebases or mixed-version programs.
-
-**Task Progress:**
-- [ ] Update `pubspec.yaml` SDK constraints to `>=2.12.0 <4.0.0` (or higher).
-- [ ] Run `dart pub get` to regenerate the package configuration.
-- [ ] **Conditional:** If migrating incrementally, add `// @dart=2.9` to the top of files you wish to opt-out of sound null safety temporarily.
-- [ ] Run `dart analyze` and resolve static errors file-by-file.
-- [ ] **Conditional:** If running or testing a mixed-version program (containing both null-safe and legacy code), execute using the `--no-sound-null-safety` flag (e.g., `dart run --no-sound-null-safety`).
-- [ ] Remove all `// @dart=2.9` comments once all files are migrated.
-- [ ] **Feedback Loop:** Run `dart analyze` -> fix remaining soundness issues -> verify with `dart test`.
-
-## Examples
-
-### Example: Fixing Un-promoted Fields
-Public or non-final fields cannot be type-promoted via null checks. Copy to a local variable first.
-
-**Input (Fails Analysis):**
-```dart
-class Coffee {
-  String? temperature;
-  void serve() {
-    if (temperature != null) {
-      print(temperature.length); // ERROR: Property 'length' cannot be accessed on 'String?'
-    }
-  }
-}
-```
-
-**Output (Passes Analysis):**
-```dart
-class Coffee {
-  String? temperature;
-  void serve() {
-    final temp = temperature; // Copy to local variable
-    if (temp != null) {
-      print(temp.length); // OK: 'temp' is promoted to non-nullable 'String'
-    }
-  }
-}
-```
-
-### Example: Using `late` for Deferred Initialization
-Avoid making fields nullable if they are guaranteed to be initialized before use.
-
-**Input (Fails Analysis or requires unsafe `!`):**
-```dart
-class Weather {
-  String? _temperature; // Implies null is a valid state
-  void update() { _temperature = 'hot'; }
-  String getTemp() => _temperature!; // Requires runtime assertion
-}
-```
-
-**Output (Passes Analysis):**
-```dart
-class Weather {
-  late String _temperature; // Non-nullable, deferred initialization
-  void update() { _temperature = 'hot'; }
-  String getTemp() => _temperature; // Safe access, checked at runtime
-}
+    dead_code: info
 ```
