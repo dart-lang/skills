@@ -14,18 +14,13 @@ Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for more information.
 
 | Skill | Description |
 |---|---|
-| [dart-api-design](dart-api-design/SKILL.md) | Apply design principles to create intuitive and robust library interfaces. |
-| [dart-async-programming](dart-async-programming/SKILL.md) | Handle asynchronous operations safely using Futures and Streams. |
-| [dart-code-generation](dart-code-generation/SKILL.md) | Automate repetitive code tasks using the build_runner system. |
-| [dart-compilation-deployment](dart-compilation-deployment/SKILL.md) | Compile and deploy Dart apps for various native and web target platforms. |
-| [dart-concurrency-isolates](dart-concurrency-isolates/SKILL.md) | Offload heavy computation to isolates to keep the main thread responsive. |
-| [dart-documentation](dart-documentation/SKILL.md) | Use idiomatic doc comments to provide a professional API surface. |
-| [dart-effective-style](dart-effective-style/SKILL.md) | Maintain code consistency by following official Dart style and naming conventions. |
-| [dart-idiomatic-usage](dart-idiomatic-usage/SKILL.md) | Apply Effective Dart usage patterns for cleaner and more efficient code. |
-| [dart-language-syntax](dart-language-syntax/SKILL.md) | Master core and advanced language syntax for expressive and type-safe code. |
-| [dart-migration-versioning](dart-migration-versioning/SKILL.md) | Manage language versioning and perform large-scale codebase upgrades. |
-| [dart-native-interop-ffi](dart-native-interop-ffi/SKILL.md) | Bridge Dart with native C/C++ libraries using FFI. |
-| [dart-package-management](dart-package-management/SKILL.md) | Structure packages and manage dependencies using the pub ecosystem. |
-| [dart-static-analysis](dart-static-analysis/SKILL.md) | Configure and resolve static analysis warnings to maintain project health. |
-| [dart-testing](dart-testing/SKILL.md) | Ensure code correctness with comprehensive unit and integration tests. |
-| [dart-web-development](dart-web-development/SKILL.md) | Build high-performance web apps using modern interop and browser APIs. |
+| [dart-add-unit-test](skills/dart-add-unit-test/SKILL.md) | Write and organize unit tests for functions, methods, and classes using `package:test`. Use when creating new logic or fixing bugs to ensure code remains correct and regression-free. |
+| [dart-build-cli-app](skills/dart-build-cli-app/SKILL.md) | Entrypoint structure, exit codes, cross-platform scripts. Use when building command line utilities, scripts, or applications. |
+| [dart-collect-coverage](skills/dart-collect-coverage/SKILL.md) | Collect coverage using the coverage packge and create an LCOV report |
+| [dart-fix-runtime-errors](skills/dart-fix-runtime-errors/SKILL.md) | Uses get_runtime_errors and lsp to fetch an active stack trace, locate the failing line, apply a fix, and verify resolution via hot_reload. |
+| [dart-fix-static-analysis-errors](skills/dart-fix-static-analysis-errors/SKILL.md) | Workflow for identifying and fixing static analysis errors. Use this after modifying code or if `dart analyze` fails. |
+| [dart-generate-test-mocks](skills/dart-generate-test-mocks/SKILL.md) | Define and generate mock objects for external dependencies using `package:mockito` and `build_runner`. Use when unit testing classes that depend on complex external services like APIs or databases. |
+| [dart-migrate-to-checks-package](skills/dart-migrate-to-checks-package/SKILL.md) | Replace the usage of `expect` and similar functions from `package:matcher` to `package:checks` equivalents. |
+| [dart-resolve-package-conflicts](skills/dart-resolve-package-conflicts/SKILL.md) | Workflow for fixing package version conflicts. Use this when `pub get` fails due to incompatible package versions. |
+| [dart-run-static-analysis](skills/dart-run-static-analysis/SKILL.md) | Execute `dart analyze` to identify warnings and errors, and use `dart fix --apply` to automatically resolve mechanical lint issues. Use during development to ensure code quality and before committing changes. |
+| [dart-use-pattern-matching](skills/dart-use-pattern-matching/SKILL.md) | Use switch expressions and pattern matching where appropriate |
