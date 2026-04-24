@@ -1,194 +1,349 @@
-- name: dart-effective-style
-  description: Maintain code consistency by following official Dart style and naming conventions.
+- name: dart-add-unit-test
+  description: Write and organize unit tests for functions, methods, and classes
+    using `package:test`. Use when creating new logic or fixing bugs to ensure
+    code remains correct and regression-free.
   instructions: |
-    - DO name types (classes, enums, typedefs) using UpperCamelCase.
-    - DO name members and variables using lowerCamelCase.
-    - PREFER consistency with existing code, but official guidelines should lead.
-    - DO run `dart format` as a mandatory step before committing code.
-    - PREFER relative imports for files located inside the `lib` directory of the same package.
-    - PREFER using `_`, `__`, etc., for unused callback parameters to signal intent.
-    - DO use a leading underscore `_` for members to indicate library privacy.
-    - Related Skills: `dart-static-analysis`, `dart-api-design`.
-  resources:
-    - https://dart.dev/effective-dart/style.html#naming
-    - https://dart.dev/effective-dart/style.html#formatting
+    1.  **Place Test Code**
+        *   Place your test code in the `test` directory at the top of your package.
+        *   By convention, test files should have `_test` at the end of their file names.
 
-- name: dart-documentation
-  description: Use idiomatic doc comments to provide a professional API surface.
-  instructions: |
-    - DO use `///` exclusively for doc comments (avoid `/**`).
-    - DO begin the first sentence with a brief, third-person singular summary.
-    - PREFER placing the summary on its own line for better readability in IDE tooltips.
-    - DO use square brackets `[]` to link to types, methods, or variables in scope.
-    - PREFER providing concise code examples for complex logic using markdown blocks.
-    - DO verify generated docs using `dart doc --validate-links`.
-    - Related Skills: `dart-effective-style`.
-  resources:
-    - https://dart.dev/effective-dart/documentation.html#doc-comments
-    - https://dart.dev/tools/dart-doc.html
+    2.  **Write Tests using `package:test`**
+        *   Use the `package:test` library, which provides a standard way of writing tests in Dart.
+        *   You can write single tests or groups of tests.
+        *   The `test` package allows you to write asynchronous tests just as you would synchronous tests.
+        *   You can use `expect()`, `group()`, and `test()` functions provided by the `test` package.
+        *   For testing code that uses dependency injection, `package:mockito` can be used with `package:test` to mock objects. `package:mockito` helps in creating mock objects, configuring them for fixed scenarios, and verifying interactions.
 
-- name: dart-static-analysis
-  description: Configure and resolve static analysis warnings to maintain project health.
-  instructions: |
-    - DO run `dart analyze` to catch potential bugs and style violations early.
-    - DO configure custom lint rules in `analysis_options.yaml` (prefer using `package:lints`).
-    - DO resolve "non-promotion" reasons by using local variables for field promotion.
-    - DO use `dart fix --apply` for bulk-fixing common lint and migration issues.
-    - AVOID ignoring lints manually unless absolutely necessary; prefer fixing the root cause.
-    - Related Skills: `dart-effective-style`, `dart-api-design`.
+    3.  **Run Tests**
+        *   Use the `dart test` command to run tests that rely on the `test` package and are located under the `test` directory.
+        *   If you are working on Flutter code, use the `flutter test` command instead.
+        *   Note that `dart test` will not run tests in an `integration_test` directory by default; you will need to explicitly run them with `dart test integration_test`.
   resources:
-    - https://dart.dev/tools/analysis.html#customizing-static-analysis
-    - https://dart.dev/tools/linter-rules/index.html
-    - https://dart.dev/tools/non-promotion-reasons.html
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://pub.dev/packages/test
+    - https://dart.dev/tools/dart-test
+    - https://dart.dev/tools/testing
+- name: dart-use-pattern-matching
+  description: Use switch expressions and pattern matching where appropriate
+  instructions: |
+    1.  **Identify Scenarios for Pattern Matching:**
+        *   Determine if you need to test a value to see if it has an expected form.
+        *   Consider situations where you want to destructure an object and extract its data into parts.
+        *   Look for operations that require specific behavior for each type, especially when grouping that behavior in one place rather than spreading it across type definitions.
+        *   Evaluate if you need to validate incoming data, such as deserialized JSON, where map and list patterns can be used for destructuring key-value pairs.
+        *   Consider using patterns in local variable declarations and assignments, `for` and `for-in` loops, `if-case` statements, and control flow in collection literals.
 
-- name: dart-language-syntax
-  description: Master core and advanced language syntax for expressive and type-safe code.
-  instructions: |
-    - PREFER `var` for local variables with obvious types; use explicit types otherwise.
-    - DO use `final` for variables that should not be reassigned.
-    - DO master pattern matching (destructuring) in assignments and switch statements.
-    - DO use records `(...)` for returning multiple values without defining a class.
-    - DO implement generics `<T>` to ensure type safety in reusable components.
-    - DO use extension methods and types to add functionality to existing classes.
-    - Related Skills: `dart-idiomatic-usage`.
-  resources:
-    - https://dart.dev/language/variables.html
-    - https://dart.dev/language/functions.html
-    - https://dart.dev/language/patterns/index.html
-    - https://dart.dev/language/records/index.html
-    - https://dart.dev/language/generics/index.html
+    2.  **Choose Between Switch Statements and Switch Expressions:**
+        *   If you need to produce a value based on which case matches, use a switch expression. Switch expressions can be used wherever Dart allows expressions, except at the start of an expression statement.
+        *   If you want to use a switch at the start of an expression statement, use a switch statement.
+        *   Switch expressions offer a more concise way to rewrite switch statements, where case bodies are single expressions and cases are separated from their bodies using `=>` instead of `:`.
+        *   Switch statements and expressions both allow any kind of pattern in their case clauses.
 
-- name: dart-idiomatic-usage
-  description: Apply Effective Dart usage patterns for cleaner and more efficient code.
-  instructions: |
-    - DO use collection literals (e.g., `[]`, `{}`) instead of constructors.
-    - DO use `.isEmpty` and `.isNotEmpty` instead of checking length against zero.
-    - PREFER the spread operator `...` and collection-if/for for dynamic lists.
-    - AVOID `cast()` when possible; prefer `Map.from()` or similar conversions.
-    - PREFER string interpolation `$variable` instead of concatenation.
-    - Related Skills: `dart-language-syntax`, `dart-async-programming`.
-  resources:
-    - https://dart.dev/effective-dart/usage/index.html#collections
-    - https://dart.dev/effective-dart/usage/index.html#strings
+    3.  **Define Case Patterns:**
+        *   **Constant Patterns:** Match if the value is equal to a constant.
+        *   **Logical-or Patterns (`||`):** Allow multiple cases to share a body or a guard in switch expressions or statements.
+        *   **Relational and Logical-and Patterns (`>=`, `<=`, `&&`):** Match if a value falls within a specified range.
+        *   **Record Patterns:** Match if an object is a record with specific fields, and can assign those fields to variables.
+        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields.
+        *   **Map Patterns:** Useful for destructuring key-value pairs in deserialized data.
+        *   **Variable Patterns:** Declare new local variables when a pattern matches and destructures a value.
+        *   **Wildcard Patterns (`_`):** Use as a placeholder to ignore parts of a matched value. In list patterns, a rest element can also be used.
+        *   **Null-check Patterns (`?`):** Treat null values as match failures without throwing, making the matched variable non-nullable.
+        *   **Null-assert Patterns (`!`):** Match if the object is not null, permitting non-null values to flow through but throwing if the matched value is null.
+        *   **Parenthesized Patterns:** Control pattern precedence.
 
-- name: dart-async-programming
-  description: Handle asynchronous operations safely using Futures and Streams.
-  instructions: |
-    - DO use `async`/`await` instead of raw `.then()` calls for better readability.
-    - DO wrap asynchronous calls in `try-catch` to handle errors gracefully.
-    - PREFER `Future.wait` to initiate multiple independent futures concurrently.
-    - PREFER `await for` over `forEach` or `listen` when consuming streams sequentially.
-    - DO use `StreamController` with a `close()` call to prevent memory leaks.
-    - Related Skills: `dart-idiomatic-usage`, `dart-concurrency-isolates`.
-  resources:
-    - https://dart.dev/language/async.html
-    - https://dart.dev/libraries/async/async-await.html
-    - https://dart.dev/libraries/async/using-streams.html
+    4.  **Implement Case Bodies:**
+        *   For switch expressions, each case must have a single expression as its body, and there is no implicit fallthrough for empty cases.
+        *   For switch statements, empty cases can fall through to the next case, allowing cases to share a body. `break` can be used for an empty case that does not fall through, and `continue` with a label can be used for non-sequential fall-through.
 
-- name: dart-concurrency-isolates
-  description: Offload heavy computation to isolates to keep the main thread responsive.
-  instructions: |
-    - DO use `Isolate.run()` for simple one-off background tasks.
-    - DO manually manage `SendPort` and `ReceivePort` for complex, long-running background workers.
-    - AVOID passing large mutable objects between isolates; prefer simple data types.
-    - DO ensure isolates are terminated when no longer needed to free resources.
-    - Related Skills: `dart-async-programming`.
-  resources:
-    - https://dart.dev/language/isolates.html
-    - https://dart.dev/language/concurrency.html
+    5.  **Add Guard Clauses (Optional):**
+        *   Use the `when` keyword to set an optional guard clause after a case clause in both switch statements and expressions.
+        *   Guard clauses evaluate an arbitrary condition as part of a case without exiting the switch if the condition is false.
 
-- name: dart-package-management
-  description: Structure packages and manage dependencies using the pub ecosystem.
-  instructions: |
-    - DO maintain a valid `pubspec.yaml` with clear version constraints (prefer `^`).
-    - DO follow the "lib/" directory convention for public exports.
-    - DO use `dart pub get` and `dart pub upgrade` to manage the `package_config.json`.
-    - DO implement workspaces in monorepos to share dependencies across local packages.
-    - DO ensure all public assets are listed correctly in the pubspec.
-    - Related Skills: `dart-api-design`.
-  resources:
-    - https://dart.dev/tools/pub/pubspec.html
-    - https://dart.dev/tools/pub/package-layout.html
-    - https://dart.dev/tools/pub/workspaces.html
+    6.  **Handle Unmatched Cases:**
+        *   Use a `default` or wildcard `_` clause to execute code when no other case clause matches.
 
-- name: dart-testing
-  description: Ensure code correctness with comprehensive unit and integration tests.
-  instructions: |
-    - DO write tests using the `test` package with descriptive group and test names.
-    - DO use `expect()` with appropriate matchers (e.g., `completion`, `throwsA`).
-    - DO run tests via `dart test` and use flags for specific directories or tags.
-    - PREFER mock objects or fakes to isolate the system under test.
-    - Related Skills: `dart-static-analysis`, `dart-code-generation`.
-  resources:
-    - https://dart.dev/tools/testing.html
+    7.  **Enable Exhaustiveness Checking (for Sealed Classes):**
+        *   Apply the `sealed` modifier to a class to enable exhaustiveness checking when switching over its subtypes. This will inform you if a new subclass is added and the switch expression is incomplete.
 
-- name: dart-compilation-deployment
-  description: Compile and deploy Dart apps for various native and web target platforms.
-  instructions: |
-    - DO use `dart compile exe` for self-contained native binaries on Windows/macOS/Linux.
-    - DO use `dart compile js` or `dart compile wasm` for web deployment targets.
-    - DO optimize for performance using AOT compilation where supported.
-    - DO use `dartaotruntime` for running AOT snapshots in resource-constrained environments.
-    - Related Skills: `dart-web-development`.
+    8.  **Destructure and Assign Variables:**
+        *   When a pattern matches, it can destructure the value and bind it to new local variables.
+        *   Use a variable assignment pattern on the left side of an assignment to destructure an object and assign values to existing variables instead of binding new ones. This can be used to swap variable values.
   resources:
-    - https://dart.dev/tools/dart-compile.html
-    - https://dart.dev/tools/dartaotruntime.html
+    - https://raw.githubusercontent.com/dart-lang/language/refs/heads/main/accepted/3.0/patterns/feature-specification.md
+    - https://dart.dev/language/collections
+    - https://dart.dev/language/pattern-types
+    - https://dart.dev/language/patterns
+- name: dart-run-static-analysis
+  description: Execute `dart analyze` to identify warnings and errors, and use
+   `dart fix --apply` to automatically resolve mechanical lint issues. Use during
+    development to ensure code quality and before committing changes.
+  instructions: |
+    1.  **Analyze the project's Dart source code**:
+        *   Use the `dart analyze` command to perform static analysis.
+        *   You can run `dart analyze` over all Dart files in the current directory.
+        *   Alternatively, you can specify a directory or a single Dart file as an argument, for example, `dart analyze bin`.
+        *   The `dart analyze` command is available whether you download the Dart SDK explicitly or only the Flutter SDK.
+        *   The analyzer uses the `analyzer` package to perform static analysis and can be customized to look for various potential problems, including errors and warnings specified in the Dart language spec.
+        *   It can also configure linter rules to ensure code complies with the Dart Style Guide and Effective Dart guidelines.
+        *   By default, the analyzer reports failure for errors or warnings, but not for info-level issues. This behavior can be customized using flags like `--fatal-infos` and `--no-fatal-warnings`.
+        *   Analyzer plugins can extend the Dart analyzer to report custom diagnostics (lints and warnings), offer quick fixes, and provide assists. These plugins are available in your IDE and when running `dart analyze` or `flutter analyze`.
+        *   You can enable an analyzer plugin by adding it to the `plugins` section of your `analysis_options.yaml` file.
+        *   Static analysis helps reveal type-related bugs at compile time that might be tricky to find at runtime. It also contributes to more readable and maintainable code, and better ahead-of-time (AOT) compilation.
 
-- name: dart-web-development
-  description: Build high-performance web apps using modern interop and browser APIs.
-  instructions: |
-    - DO prefer `package:web` over legacy `dart:html`.
-    - DO use `dart:js_interop` with `@JS` annotations for external library calls.
-    - PREFER Extension Types for defining JS interop boundaries and complex JS objects.
-    - AVOID using `dart:mirrors` in web applications (not supported).
-    - DO use `webdev serve` for a development environment with hot reload.
-    - Related Skills: `dart-migration-versioning`, `dart-compilation-deployment`.
-  resources:
-    - https://dart.dev/interop/js-interop/index.html
-    - https://dart.dev/tools/webdev.html
+    2.  **Apply automated fixes to Dart source code**:
+        *   Use the `dart fix` command to apply automated fixes.
+        *   To apply the proposed changes, use the `--apply` flag: `dart fix --apply`.
+        *   To preview proposed changes without applying them, use the `--dry-run` flag: `dart fix --dry-run`.
+        *   `dart fix` applies fixes when a "problem" is identified by a diagnostic.
+        *   Some diagnostics, like compilation errors, are implicitly enabled, while others, such as lints, must be explicitly enabled in the `analysis_options.yaml` file.
+        *   Enabling additional lints can sometimes increase the number of fixes that can be applied.
+        *   Not all diagnostics have associated fixes.
+        *   `dart fix` can be used to resolve outdated API usages when updating to newer Dart and Flutter SDKs.
+        *   For example, in Dart 3 migration, `dart fix --apply --code=obsolete_colon_for_default_value` can automate the migration of colon-syntax for default values to the equals syntax.
+        *   Quick fixes, which are automated edits to resolve issues reported by linter rules, can be applied using `dart fix` or an editor with Dart support.
 
-- name: dart-native-interop-ffi
-  description: Bridge Dart with native C/C++ libraries using FFI.
-  instructions: |
-    - DO use `package:ffigen` to automate the generation of FFI bindings.
-    - DO manually allocate and free memory using `calloc` or `malloc` if required.
-    - DO use `Finalizable` and `NativeFinalizer` to ensure native resources are cleaned up.
-    - PREFER `abiSpecificInteger` for cross-platform type mapping.
-    - Related Skills: `dart-concurrency-isolates`.
+    3.  **Customize static analysis (optional)**:
+        *   You can customize the behavior of the analyzer using an `analysis_options.yaml` file or comments in Dart source code.
+        *   Place the `analysis_options.yaml` file at the root of the package, in the same directory as the `pubspec` file.
+        *   To exclude files from static analysis, use the `exclude:` analyzer option in `analysis_options.yaml`, listing individual files or using glob patterns.
+        *   To ignore a specific non-error diagnostic for a file, add an `// ignore_for_file:` comment to the file, for example, `// ignore_for_file: unused_local_variable`. This comment acts for the whole file.
+        *   To suppress a diagnostic for a single line, you can use `// ignore: some_plugin/some_code`.
+        *   To suppress a diagnostic for an entire file, you can use `// ignore_for_file: some_plugin/some_code`.
+        *   You can also disable specific rules for all files or change the severity of rules.
+        *   To prevent implicit downcasts from `dynamic` and avoid runtime `TypeError` issues, consider enabling the analyzer's strict casts mode in `analysis_options.yaml` by setting `analyzer: language: strict-casts: true`.
   resources:
-    - https://dart.dev/interop/c-interop/index.html
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://pub.dev/packages/analyzer
+    - https://dart.dev/tools/analysis
+    - https://dart.dev/tools/analyzer-performance
+    - https://dart.dev/tools/analyzer-plugins
+    - https://dart.dev/tools/dart-analyze
+    - https://dart.dev/tools/dart-fix
+    - https://dart.dev/tools/dart-format
+    - https://dart.dev/tools/dart-run
+    - https://dart.dev/tools/dart-tool
+    - https://dart.dev/tools/linter-rules
+- name: dart-build-cli-app
+  description: Entrypoint structure, exit codes, cross-platform scripts. Use
+    when building command line utilities, scripts, or applications.
+  instructions: |
+    **1. Project Creation and Setup:**
+    *   Begin by creating a new Dart project using the `dart create` command.
+    *   By default, `dart create` generates a console application, but you can specify the `cli` template using `dart create -t cli my_cli` for a CLI application with basic argument parsing.
+    *   This command creates a directory for your project and fetches package dependencies unless the `--no-pub` flag is used.
+    *   The generated project will have a `bin/cli.dart` file, which serves as the entry point for your application, containing the `main` function where program execution begins.
+    *   The `bin/` directory is where your executable code resides.
+    *   For web packages, entrypoint code (Dart scripts with `main()`, CSS, HTML) goes under `web/`, while library code goes under `lib/`. If a library isn't directly imported by web code or another package, it should be placed under `lib/src`.
 
-- name: dart-code-generation
-  description: Automate repetitive code tasks using the build_runner system.
-  instructions: |
-    - DO run `dart run build_runner build --delete-conflicting-outputs` to resolve build issues.
-    - PREFER `watch` for continuous background generation during development.
-    - AVOID committing `.g.dart` files if the project policy is to generate them on-the-fly.
-    - Related Skills: `dart-testing`, `dart-web-development`.
-  resources:
-    - https://dart.dev/tools/build_runner.html
+    **2. Developing the Application:**
+    *   Modify the `bin/cli.dart` file to implement your application's logic.
+    *   Dart programs start execution from their `main` function.
+    *   You can organize your code into packages and libraries.
+    *   For example, you might import a `command_runner` package to handle argument parsing and command execution.
+    *   Error handling can be implemented using `try-catch` blocks, and the `rethrow` keyword can be used to partially handle an exception while allowing it to propagate. A `finally` clause ensures code runs regardless of whether an exception is thrown.
+    *   For improved user experience, you can add colorful console output using ANSI escape codes.
 
-- name: dart-migration-versioning
-  description: Manage language versioning and perform large-scale codebase upgrades.
-  instructions: |
-    - DO check current language version requirements in `pubspec.yaml`.
-    - DO use `@dart = <version>` to pin specific files to older versions during migration.
-    - DO consult breaking change logs before performing major dependency upgrades.
-    - Related Skills: `dart-web-development`, `dart-static-analysis`.
-  resources:
-    - https://dart.dev/language/versioning.html
-    - https://dart.dev/resources/breaking-changes.html
+    **3. Building the CLI Application:**
+    *   Use the `dart build cli` command to build your Dart CLI application. This command automatically runs build hooks and bundles code assets.
+    *   The resulting app bundle will be structured with a `bundle/` directory containing `bin/<compiled_executable>` and `lib/<dynamic_libraries>`.
+    *   You can specify the output directory using the `-o` or `--output` option. If omitted, the default path is `build/cli/_/`.
+    *   The main entry-point file can be specified using the `-t` or `--target` option, which must be a Dart file in the `bin/` directory. If omitted and there's a single Dart file in `bin/`, that file is used.
+    *   The verbosity level of the compilation can be set using the `--verbosity` option (error, warning, info, or all).
+    *   Support for `dart build` was introduced in Dart 3.10.
 
-- name: dart-api-design
-  description: Apply design principles to create intuitive and robust library interfaces.
-  instructions: |
-    - PREFER named parameters for functions with more than two arguments.
-    - AVOID positional boolean parameters; use named parameters instead.
-    - CONSIDER omitting the 'is/can/has' prefix from named boolean parameters (e.g., `paused: true`).
-    - DO use type aliases (typedefs) to simplify complex function signatures.
-    - AVOID public fields; use getters and setters for encapsulation.
-    - DO design for extension by using appropriate class modifiers (`interface`, `base`, `sealed`).
-    - Related Skills: `dart-effective-style`, `dart-package-management`.
+    **4. Creating Self-Contained Executables (Cross-Platform):**
+    *   To produce a standalone executable for Windows, macOS, or Linux, use the `dart compile exe` command.
+    *   This command compiles the specified Dart file and its dependencies into native machine code, including a small Dart runtime for type checking and garbage collection.
+    *   You can distribute and run the output file like any other executable.
+    *   Example: `dart compile exe bin/myapp.dart -o /tmp/myapp`.
+    *   Cross-compilation is supported for `exe`.
+        *   Dart 3.8 introduced support for Linux ARM64 and x64 cross-compilation.
+        *   Dart 3.9 introduced support for Linux ARM and RISCV64.
+        *   To use cross-compilation, include flags like `--target-os=linux` (currently only Linux is supported for this flag) and `--target-arch=value`.
+        *   64-bit host operating systems (Linux, macOS, Windows) support cross-compilation to Linux ARM, ARM64, RISCV64, and x64 targets.
+
+    **5. Creating AOT Modules (for reduced disk space):**
+    *   For distributing multiple command-line apps with reduced disk space requirements, use the `dart compile aot-snapshot` command.
+    *   This produces an output file specific to the current architecture. For example, an `.aot` file created on macOS will only run on macOS.
+    *   Dart supports AOT modules on Windows, macOS, and Linux.
+    *   Example: `dart compile aot-snapshot bin/myapp.dart`.
+    *   The compiled AOT module can be run using `dartaotruntime bin/myapp.aot`.
+    *   Cross-compilation support for `aot-snapshot` is the same as for `exe`.
+    *   The `aot-snapshot` subcommand has the same limitations as the `exe` subcommand.
+
+    **6. Exit Codes:**
+    *   The `dart format` command can return an exit code of 1 if formatting changes occur, and 0 if no changes occur, when the `--set-exit-if-changed` flag is used. This is useful for continuous integration (CI) systems.
+
   resources:
-    - https://dart.dev/effective-dart/design.html#naming
-    - https://dart.dev/language/class-modifiers.html
+    - https://pub.dev/packages/args
+    - https://pub.dev/packages/stack_trace
+    - https://pub.dev/packages/test_process
+    - https://pub.dev/packages/test_descriptor
+    - https://pub.dev/packages/io
+    - https://dart.dev/tools/dart-build
+    - https://dart.dev/tools/dart-compile
+    - https://dart.dev/tools/dart-create
+    - https://dart.dev/tools/dart-format
+    - https://dart.dev/tools/dart-run
+    - https://dart.dev/tools/dart-tool
+    - https://dart.dev/tools/pub/cmd/pub-global
+- name: dart-resolve-package-conflicts
+  description: Workflow for fixing package version conflicts. Use this when `pub
+    get` fails due to incompatible package versions.
+  instructions: |
+    **1. Understand the Problem:**
+    *   Dart does not allow multiple versions of the same package to be used together, which can lead to dependency conflicts.
+    *   Version lock occurs when packages are disincentivized to upgrade their dependencies because it would force all users to upgrade as well. To address this, Dart loosens the constraints packages place on their dependencies.
+    *   If `pub` cannot find a set of concrete versions that work for your app, it will report an error.
+
+    **2. Identify Outdated Packages:**
+    *   Use `dart pub outdated` to identify dependencies that are not on the latest stable versions. This command shows the "Current," "Upgradable," "Resolvable," and "Latest" versions of your packages.
+        *   "Upgradable" refers to the latest version allowed by your `pubspec.yaml` file, which `dart pub upgrade` will resolve to.
+        *   "Resolvable" is the latest version that can be resolved considering all other dependencies.
+        *   "Latest" is the absolute latest version available, excluding prereleases unless specified.
+    *   When editing `pubspec.yaml`, generally update dependencies and `dev_dependencies` to use the versions in the "Resolvable" column.
+
+    **3. Update Dependencies:**
+    *   **Upgrade to the latest compatible versions:**
+        *   Run `dart pub upgrade` to update to the latest package versions allowed by your `pubspec`. This command gets the newest compatible and non-retracted version available.
+        *   If `dart pub upgrade` resolves an "Upgradable" dependency, it will update the `pubspec.lock` file.
+    *   **Tighten `dev_dependencies` constraints:**
+        *   Set the version constraints of packages in `dev_dependencies` to have a lower bound of the latest version your package depends on. This can involve setting them to the latest patch versions, for example, `build_runner: ^2.10.4`.
+    *   **Modify `pubspec.yaml` for "Resolvable" versions:**
+        *   If a package is listed as "Resolvable" but not "Upgradable" by `dart pub outdated`, you might need to manually edit the `pubspec.yaml` file to use the version in the "Resolvable" column (or a compatible higher version). For example, change `http: ^0.11.0` to `http: ^0.12.1`. After editing, run `dart pub upgrade` to update the `pubspec.lock` file.
+    *   **Upgrade outside specified constraints:**
+        *   If no alternative version satisfies the current version constraint, edit the version constraint in the `pubspec.yaml` file and then run `dart pub upgrade`.
+
+    **4. Manage `pubspec.lock`:**
+    *   `pubspec.lock` specifies the exact versions of each dependency.
+    *   You can delete the entire package entry for a package with a retracted version in `pubspec.lock` and then run `dart pub get` to get the newest compatible and non-retracted version.
+    *   While deleting the entire `pubspec.lock` file and running `dart pub get` is an option, it is not recommended as it might change versions for other dependencies.
+    *   `dart pub get` will unlock enough locked dependency versions to make a resolution possible if new dependencies are added/removed, a locked version no longer exists, or the Dart SDK version changes. It will also notify you of dependency changes relative to the existing `pubspec.lock`.
+    
+    **5. Best Practices for Dependency Management:**
+    *   Be proactive in managing dependencies.
+    *   Ensure packages depend on the freshest versions when possible, as stale packages can negatively impact stability, performance, and quality.
+    *   Use caret syntax (`^`) for specifying dependencies, as it allows `pub` to select newer versions while placing an upper bound.
+    *   Use `dart pub upgrade --tighten` to update dependencies to the latest versions if constraints need to be bumped.
+
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://dart.dev/language/versioning
+    - https://dart.dev/tools/pub/cmd
+    - https://dart.dev/tools/pub/cmd/pub-add
+    - https://dart.dev/tools/pub/cmd/pub-deps
+    - https://dart.dev/tools/pub/cmd/pub-downgrade
+    - https://dart.dev/tools/pub/cmd/pub-get
+    - https://dart.dev/tools/pub/cmd/pub-outdated
+    - https://dart.dev/tools/pub/cmd/pub-remove
+    - https://dart.dev/tools/pub/cmd/pub-unpack
+    - https://dart.dev/tools/pub/cmd/pub-upgrade
+    - https://dart.dev/tools/pub/dependencies
+    - https://dart.dev/tools/pub/packages
+    - https://dart.dev/tools/pub/publishing
+    - https://dart.dev/tools/pub/versioning
+    - https://dart.dev/tools/pub/workspaces
+- name: dart-fix-static-analysis-errors
+  description: Workflow for identifying and fixing static analysis errors. Use
+    this after modifying code or if `dart analyze` fails.
+  instructions: |
+    1.  **Identify Static Analysis Errors:**
+        *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
+        *   Alternatively, specify a directory or a single Dart file to analyze, for example, `$ dart analyze bin`.
+        *   Customize how the analyzer treats warnings and info-level issues; by default, it reports failure for errors and warnings but not info-level issues. You can use flags like `--fatal-infos` to make the analyzer fail on info-level issues.
+        *   If working with mixed-version code or older Dart versions (e.g., 2.9) that might pass null values where the analyzer expects non-nullable types, consider disabling sound null safety temporarily using `--no-sound-null-safety` with `dart run` or `flutter run`, or by setting the language version in the entrypoint file to 2.9.
+
+    2.  **Fix Static Analysis Errors:**
+        *   **Address Null Safety Issues:** Eliminate static errors related to null safety by adding `?`, `!`, `required`, and `late` as needed. For instance, use `late` for variables that are guaranteed to be initialized before use, especially top-level or instance variables where Dart's control flow analysis might not detect initialization.
+        *   **Correct Type System Issues:**
+            *   Fix most static analysis errors by adding type annotations to generic classes, especially common collection types like `List<T>` and `Map<K,V>`.
+            *   Ensure sound return types and parameter types when overriding methods.
+            *   Avoid using a `dynamic` list as a typed list.
+            *   If an implicit downcast from a non-`dynamic` type is disallowed by static analysis (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast like `as List<Cat>`. Be aware that explicit casts can still fail at runtime if the actual type doesn't match.
+            *   To prevent implicit downcasts from `dynamic` and avoid runtime errors, consider enabling `strict-casts` mode in your `analysis_options.yaml` file.
+        *   **Utilize Type Inference:** The analyzer can infer types for fields, methods, local variables, and most generic type arguments, which can help in writing sound Dart code. If the analyzer lacks sufficient information, it defaults to the `dynamic` type.
+
+    3.  **Verify Fixes:**
+        *   Re-run the Dart analyzer to confirm that the static analysis errors have been resolved.
+        *   Test or run your code to ensure that the fixes haven't introduced new runtime errors, especially when dealing with explicit casts or `late` variables that might not be initialized.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://dart.dev/null-safety/understanding-null-safety
+    - https://dart.dev/null-safety/unsound-null-safety
+    - https://dart.dev/tools/analysis
+    - https://dart.dev/tools/analyzer-performance
+    - https://dart.dev/tools/dart-analyze
+    - https://dart.dev/tools/dart-fix
+    - https://dart.dev/tools/linter-rules
+- name: dart-fix-runtime-errors
+  description: Uses get_runtime_errors and lsp to fetch an active stack trace,
+    locate the failing line, apply a fix, and verify resolution via hot_reload.
+  instructions: |
+    1.  **Identify Static Analysis Errors:**
+        *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
+        *   Alternatively, specify a directory or a single Dart file to analyze, for example, `$ dart analyze bin`.
+        *   Customize how the analyzer treats warnings and info-level issues; by default, it reports failure for errors and warnings but not info-level issues. You can use flags like `--fatal-infos` to make the analyzer fail on info-level issues.
+        *   If working with mixed-version code or older Dart versions (e.g., 2.9) that might pass null values where the analyzer expects non-nullable types, consider disabling sound null safety temporarily using `--no-sound-null-safety` with `dart run` or `flutter run`, or by setting the language version in the entrypoint file to 2.9.
+
+    2.  **Fix Static Analysis Errors:**
+        *   **Address Null Safety Issues:** Eliminate static errors related to null safety by adding `?`, `!`, `required`, and `late` as needed. For instance, use `late` for variables that are guaranteed to be initialized before use, especially top-level or instance variables where Dart's control flow analysis might not detect initialization.
+        *   **Correct Type System Issues:**
+            *   Fix most static analysis errors by adding type annotations to generic classes, especially common collection types like `List<T>` and `Map<K,V>`.
+            *   Ensure sound return types and parameter types when overriding methods.
+            *   Avoid using a `dynamic` list as a typed list.
+            *   If an implicit downcast from a non-`dynamic` type is disallowed by static analysis (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast like `as List<Cat>`. Be aware that explicit casts can still fail at runtime if the actual type doesn't match.
+            *   To prevent implicit downcasts from `dynamic` and avoid runtime errors, consider enabling `strict-casts` mode in your `analysis_options.yaml` file.
+        *   **Utilize Type Inference:** The analyzer can infer types for fields, methods, local variables, and most generic type arguments, which can help in writing sound Dart code. If the analyzer lacks sufficient information, it defaults to the `dynamic` type.
+
+    3.  **Verify Fixes:**
+        *   Re-run the Dart analyzer to confirm that the static analysis errors have been resolved.
+        *   Test or run your code to ensure that the fixes haven't introduced new runtime errors, especially when dealing with explicit casts or `late` variables that might not be initialized.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://dart.dev/language/error-handling
+    - https://dart.dev/language/type-system
+    - https://dart.dev/language/variables
+    - https://dart.dev/learn/tutorial/error-handling
+    - https://dart.dev/tools
+    - https://dart.dev/tools/analyzer-performance
+    - https://dart.dev/tools/dart-fix
+    - https://dart.dev/tools/linter-rules/avoid_catching_errors
+- name: dart-generate-test-mocks
+  description: Define and generate mock objects for external dependencies using
+    `package:mockito` and `build_runner`. Use when unit testing classes that
+    depend on complex external services like APIs or databases.
+  instructions: |
+    1. **Understand Mocking with `package:mockito`**: `package:mockito` provides a way to create mock objects that can be easily configured for fixed scenarios. It also allows verification that the system under test interacts with the mock object in expected ways. An example using both `package:test` and `package:mockito` can be found in the International Space Station API library and its unit tests within the `mockito` package.
+    2. **Utilize `build_runner`**: `build_runner` is a command-line tool that can be used for various tasks, including code generation.
+    3. **Define Dependencies**: When dealing with external services like APIs or databases, you might need to fetch data from the internet. This often involves using packages like `package:http`. To add `package:http` as a dependency, you would run `dart pub add http`. You would then import it into your code, optionally with a library prefix like `import 'package:http/http.dart' as http;`. URLs are represented by `Uri` objects in Dart, and `Uri.parse` is a common way to create them from a string.
+    4. **Structure Your Code for Testing**: Dart is an object-oriented language with classes and mixin-based inheritance. Every object is an instance of a class, and all classes except `Null` descend from `Object`. Classes have members, including functions (methods) and data (instance variables). You can define instance variables within a class.
+    5. **Generate Mocks**: The `build_runner` tool will be used to generate the mock objects based on your definitions.
+    6. **Integrate Mocks into Unit Tests**: Use the generated mock objects in your unit tests to isolate the class being tested from its complex external dependencies. `package:test` provides a standard way of writing tests in Dart, allowing you to write single tests or groups of tests, asynchronous tests, and tag tests.
+    7. Run tests and ensure that they pass.
+
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://pub.dev/packages/mockito
+    - https://pub.dev/packages/build_runner
+    - https://dart.dev/tools/testing
+- name: dart-collect-coverage
+  description: Collect coverage using the coverage packge and create an LCOV report
+  instructions: |
+    1. Add the coverage package as a dev_dependency
+    2. Collect coverage using the coverage package
+    3. Create an LCOV report using the coverage package
+  resources:
+    - https://pub.dev/packages/coverage
+    - https://dart.dev/tools/testing
+- name: dart-migrate-to-checks-package
+  description: Replace the usage of `expect` and similar functions from `package:matcher` to `package:checks` equivalents.
+  instructions: |
+    1. Add `package:checks` as a dev dependency
+    2. Replace matcher expectations with checks expectations.
+    3. Run the static analyzer to fix static analysis warnings
+    4. Run tests and fix any failing tests.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://pub.dev/packages/checks
+    - https://pub.dev/packages/matcher
