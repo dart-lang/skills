@@ -7,7 +7,7 @@ This repository contains agent skills for Dart.
 To install the skills into your project, run the following command:
 
 ```bash
-npx skills add dart-lang/skills --all
+npx skills add dart-lang/skills --skill '*' --agent universal
 ```
 
 ## Updating Skills
