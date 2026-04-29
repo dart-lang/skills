@@ -5,6 +5,25 @@ Agent skills for Dart, maintained by the Dart team.
 If you are using Dart to build Flutter apps, you may also be 
 interested in [Agent Skills for Flutter]([url](https://github.com/flutter/skills)).
 
+## Installation
+
+To install all skills into your project, run the following command. 
+The `--agent universal` flag puts it in the standard `.agents/skills` 
+folder that most agents use.
+
+```bash
+npx skills add dart-lang/skills --skill '*' --agent universal
+```
+
+## Updating Skills
+
+To update, run the following command:
+
+```bash
+npx skills update
+```
+
+
 ## Contributing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
