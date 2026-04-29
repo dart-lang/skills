@@ -1,6 +1,9 @@
 # Agent Skills for Dart
 
-This repository contains agent skills for Dart.
+Agent skills for Dart, maintained by the Dart team.
+
+If you are using Dart to build Flutter apps, you may also be 
+interested in [Agent Skills for Flutter]([url](https://github.com/flutter/skills)).
 
 ## Contributing
 
