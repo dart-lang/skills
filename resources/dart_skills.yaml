@@ -2,6 +2,7 @@
   description: Write and organize unit tests for functions, methods, and classes
     using `package:test`. Use when creating new logic or fixing bugs to ensure
     code remains correct and regression-free.
+  examplePrompt: "Add a unit test for the calculateTotal function to verify edge cases."
   instructions: |
     1.  **Place Test Code**
         *   Place your test code in the `test` directory at the top of your package.
@@ -25,6 +26,7 @@
     - https://dart.dev/tools/testing
 - name: dart-use-pattern-matching
   description: Use switch expressions and pattern matching where appropriate
+  examplePrompt: "Refactor the JSON parser to use switch expressions and pattern matching."
   instructions: |
     1.  **Identify Scenarios for Pattern Matching:**
         *   Determine if you need to test a value to see if it has an expected form.
@@ -78,6 +80,7 @@
   description: Execute `dart analyze` to identify warnings and errors, and use
    `dart fix --apply` to automatically resolve mechanical lint issues. Use during
     development to ensure code quality and before committing changes.
+  examplePrompt: "Run static analysis and apply mechanical fixes to the whole project."
   instructions: |
     1.  **Analyze the project's Dart source code**:
         *   Use the `dart analyze` command to perform static analysis.
@@ -127,6 +130,7 @@
 - name: dart-build-cli-app
   description: Entrypoint structure, exit codes, cross-platform scripts. Use
     when building command line utilities, scripts, or applications.
+  examplePrompt: "Create a basic CLI app structure with argument parsing for a file search tool."
   instructions: |
     **1. Project Creation and Setup:**
     *   Begin by creating a new Dart project using the `dart create` command.
@@ -191,6 +195,7 @@
 - name: dart-resolve-package-conflicts
   description: Workflow for fixing package version conflicts. Use this when `pub
     get` fails due to incompatible package versions.
+  examplePrompt: "Resolve the dependency conflict between the http and shelf packages."
   instructions: |
     **1. Understand the Problem:**
     *   Dart does not allow multiple versions of the same package to be used together, which can lead to dependency conflicts.
@@ -247,6 +252,7 @@
 - name: dart-fix-static-analysis-errors
   description: Workflow for identifying and fixing static analysis errors. Use
     this after modifying code or if `dart analyze` fails.
+  examplePrompt: "Fix all static analysis warnings in the lib/src directory."
   instructions: |
     1.  **Identify Static Analysis Errors:**
         *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
@@ -279,6 +285,7 @@
 - name: dart-fix-runtime-errors
   description: Uses get_runtime_errors and lsp to fetch an active stack trace,
     locate the failing line, apply a fix, and verify resolution via hot_reload.
+  examplePrompt: "Fix the NullPointer error in the user profile service."
   instructions: |
     1.  **Identify Static Analysis Errors:**
         *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
@@ -313,6 +320,7 @@
   description: Define and generate mock objects for external dependencies using
     `package:mockito` and `build_runner`. Use when unit testing classes that
     depend on complex external services like APIs or databases.
+  examplePrompt: "Generate a mock for the ApiClient class using mockito."
   instructions: |
     1. **Understand Mocking with `package:mockito`**: `package:mockito` provides a way to create mock objects that can be easily configured for fixed scenarios. It also allows verification that the system under test interacts with the mock object in expected ways. An example using both `package:test` and `package:mockito` can be found in the International Space Station API library and its unit tests within the `mockito` package.
     2. **Utilize `build_runner`**: `build_runner` is a command-line tool that can be used for various tasks, including code generation.
@@ -329,6 +337,7 @@
     - https://dart.dev/tools/testing
 - name: dart-collect-coverage
   description: Collect coverage using the coverage packge and create an LCOV report
+  examplePrompt: "Collect test coverage and generate an LCOV report for the project."
   instructions: |
     1. Add the coverage package as a dev_dependency
     2. Collect coverage using the coverage package
@@ -338,6 +347,7 @@
     - https://dart.dev/tools/testing
 - name: dart-migrate-to-checks-package
   description: Replace the usage of `expect` and similar functions from `package:matcher` to `package:checks` equivalents.
+  examplePrompt: "Migrate the tests in test/user_test.dart to use package:checks."
   instructions: |
     1. Add `package:checks` as a dev dependency
     2. Replace matcher expectations with checks expectations.
