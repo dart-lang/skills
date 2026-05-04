@@ -2,7 +2,7 @@
   description: Write and organize unit tests for functions, methods, and classes
     using `package:test`. Use when creating new logic or fixing bugs to ensure
     code remains correct and regression-free.
-  examplePrompt: "Add a unit test for the calculateTotal function to verify edge cases."
+  examplePrompt: "Add a unit test for the Point class."
   instructions: |
     1.  **Place Test Code**
         *   Place your test code in the `test` directory at the top of your package.
@@ -26,7 +26,7 @@
     - https://dart.dev/tools/testing
 - name: dart-use-pattern-matching
   description: Use switch expressions and pattern matching where appropriate
-  examplePrompt: "Refactor the JSON parser to use switch expressions and pattern matching."
+  examplePrompt: "Use switch expressions and pattern matching in the Point class"
   instructions: |
     1.  **Identify Scenarios for Pattern Matching:**
         *   Determine if you need to test a value to see if it has an expected form.
@@ -80,7 +80,7 @@
   description: Execute `dart analyze` to identify warnings and errors, and use
    `dart fix --apply` to automatically resolve mechanical lint issues. Use during
     development to ensure code quality and before committing changes.
-  examplePrompt: "Run static analysis and apply mechanical fixes to the whole project."
+  examplePrompt: "Run static analysis and fix the issues"
   instructions: |
     1.  **Analyze the project's Dart source code**:
         *   Use the `dart analyze` command to perform static analysis.
@@ -130,7 +130,7 @@
 - name: dart-build-cli-app
   description: Entrypoint structure, exit codes, cross-platform scripts. Use
     when building command line utilities, scripts, or applications.
-  examplePrompt: "Create a basic CLI app structure with argument parsing for a file search tool."
+  examplePrompt: "Create a basic CLI app structure with argument parsing"
   instructions: |
     **1. Project Creation and Setup:**
     *   Begin by creating a new Dart project using the `dart create` command.
@@ -195,7 +195,7 @@
 - name: dart-resolve-package-conflicts
   description: Workflow for fixing package version conflicts. Use this when `pub
     get` fails due to incompatible package versions.
-  examplePrompt: "Resolve the dependency conflict between the http and shelf packages."
+  examplePrompt: "Resolve the dependency conflicts in my pubspec"
   instructions: |
     **1. Understand the Problem:**
     *   Dart does not allow multiple versions of the same package to be used together, which can lead to dependency conflicts.
@@ -249,39 +249,6 @@
     - https://dart.dev/tools/pub/publishing
     - https://dart.dev/tools/pub/versioning
     - https://dart.dev/tools/pub/workspaces
-- name: dart-fix-static-analysis-errors
-  description: Workflow for identifying and fixing static analysis errors. Use
-    this after modifying code or if `dart analyze` fails.
-  examplePrompt: "Fix all static analysis warnings in the lib/src directory."
-  instructions: |
-    1.  **Identify Static Analysis Errors:**
-        *   Run the Dart analyzer to identify static errors. You can do this for all Dart files in the current directory using `$ dart analyze`.
-        *   Alternatively, specify a directory or a single Dart file to analyze, for example, `$ dart analyze bin`.
-        *   Customize how the analyzer treats warnings and info-level issues; by default, it reports failure for errors and warnings but not info-level issues. You can use flags like `--fatal-infos` to make the analyzer fail on info-level issues.
-        *   If working with mixed-version code or older Dart versions (e.g., 2.9) that might pass null values where the analyzer expects non-nullable types, consider disabling sound null safety temporarily using `--no-sound-null-safety` with `dart run` or `flutter run`, or by setting the language version in the entrypoint file to 2.9.
-
-    2.  **Fix Static Analysis Errors:**
-        *   **Address Null Safety Issues:** Eliminate static errors related to null safety by adding `?`, `!`, `required`, and `late` as needed. For instance, use `late` for variables that are guaranteed to be initialized before use, especially top-level or instance variables where Dart's control flow analysis might not detect initialization.
-        *   **Correct Type System Issues:**
-            *   Fix most static analysis errors by adding type annotations to generic classes, especially common collection types like `List<T>` and `Map<K,V>`.
-            *   Ensure sound return types and parameter types when overriding methods.
-            *   Avoid using a `dynamic` list as a typed list.
-            *   If an implicit downcast from a non-`dynamic` type is disallowed by static analysis (e.g., assigning `List<Animal>` to `List<Cat>`), use an explicit cast like `as List<Cat>`. Be aware that explicit casts can still fail at runtime if the actual type doesn't match.
-            *   To prevent implicit downcasts from `dynamic` and avoid runtime errors, consider enabling `strict-casts` mode in your `analysis_options.yaml` file.
-        *   **Utilize Type Inference:** The analyzer can infer types for fields, methods, local variables, and most generic type arguments, which can help in writing sound Dart code. If the analyzer lacks sufficient information, it defaults to the `dynamic` type.
-
-    3.  **Verify Fixes:**
-        *   Re-run the Dart analyzer to confirm that the static analysis errors have been resolved.
-        *   Test or run your code to ensure that the fixes haven't introduced new runtime errors, especially when dealing with explicit casts or `late` variables that might not be initialized.
-  resources:
-    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
-    - https://dart.dev/null-safety/understanding-null-safety
-    - https://dart.dev/null-safety/unsound-null-safety
-    - https://dart.dev/tools/analysis
-    - https://dart.dev/tools/analyzer-performance
-    - https://dart.dev/tools/dart-analyze
-    - https://dart.dev/tools/dart-fix
-    - https://dart.dev/tools/linter-rules
 - name: dart-fix-runtime-errors
   description: Uses get_runtime_errors and lsp to fetch an active stack trace,
     locate the failing line, apply a fix, and verify resolution via hot_reload.
@@ -320,7 +287,7 @@
   description: Define and generate mock objects for external dependencies using
     `package:mockito` and `build_runner`. Use when unit testing classes that
     depend on complex external services like APIs or databases.
-  examplePrompt: "Generate a mock for the ApiClient class using mockito."
+  examplePrompt: "Generate a mock for the ApiClient class" 
   instructions: |
     1. **Understand Mocking with `package:mockito`**: `package:mockito` provides a way to create mock objects that can be easily configured for fixed scenarios. It also allows verification that the system under test interacts with the mock object in expected ways. An example using both `package:test` and `package:mockito` can be found in the International Space Station API library and its unit tests within the `mockito` package.
     2. **Utilize `build_runner`**: `build_runner` is a command-line tool that can be used for various tasks, including code generation.
@@ -337,7 +304,7 @@
     - https://dart.dev/tools/testing
 - name: dart-collect-coverage
   description: Collect coverage using the coverage packge and create an LCOV report
-  examplePrompt: "Collect test coverage and generate an LCOV report for the project."
+  examplePrompt: "Collect test coverage"
   instructions: |
     1. Add the coverage package as a dev_dependency
     2. Collect coverage using the coverage package
@@ -347,7 +314,7 @@
     - https://dart.dev/tools/testing
 - name: dart-migrate-to-checks-package
   description: Replace the usage of `expect` and similar functions from `package:matcher` to `package:checks` equivalents.
-  examplePrompt: "Migrate the tests in test/user_test.dart to use package:checks."
+  examplePrompt: "Migrate the tests in test/user_test.dart to use package:checks"
   instructions: |
     1. Add `package:checks` as a dev dependency
     2. Replace matcher expectations with checks expectations.
