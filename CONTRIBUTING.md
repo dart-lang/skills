@@ -1,29 +1,20 @@
 # Contributing to Dart Skills
 
-We'd love to accept your patches and contributions to this project.
+## Note on contributions
 
-## Before you begin
+We are not yet open for direct contributions as we are still actively working on publishing a larger set of skills. Your experience using these skills is important to us. If you find a bug or have an idea for a skill you'd like to see added, please [file an issue][issue] or request following the insturctions below. 
 
-### Sign our Contributor License Agreement
+We appreciate your feedback!
 
-Contributions to this project must be accompanied by a
-[Contributor License Agreement](https://cla.developers.google.com/about) (CLA).
+## Providing Feedback on an existing skill
+[File an issue][issue] and let us know:
+1. What language model are you using? (Gemini 3.1 Flash, Claude Sonnet 4.6, etc)
+2. What agent harness are you using? (Antigravity, Gemini CLI, Claude Code, Cursor)
+3. Logs that show what prompt you used and steps the agent took to complete the task (Such as what skills it chose to use, MCP tools it used, etc).
 
-You (or your employer) retain the copyright to your contribution; this simply gives us permission to use and redistribute your contributions as part of the project.
-
-If you or your current employer have already signed the Google CLA (even if it was for a different project), you probably don't need to do it again.
-
-Visit <https://cla.developers.google.com/> to see your current agreements or to sign a new one.
-
-
-## Contribution process
-
-### Code reviews
-
-All submissions, including submissions by project members, require review. We
-use GitHub pull requests for this purpose. Consult
-[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
-information on using pull requests.
+## Requesting a skill
+First check if its on the [list of skills we plan to work on next][next skills] and feel free to comment if you'd like us to prioritize differently.
+If not [file an issue][issue] and we will prioritize it.
 
 ## Issue triage
 
@@ -36,6 +27,8 @@ We regularly triage issues by looking at newly filed issues and determining what
 
 At the end of a triage session, the untriaged issue list should be as close to empty as possible.
 
+[issue]: https://github.com/dart-lang/skills/issues
+[next skills]: https://github.com/dart-lang/skills/issues/9
 [untriaged_list]: https://github.com/dart-lang/skills/issues?q=is%3Aissue+state%3Aopen+-label%3Atriaged
 [P0]: https://github.com/dart-lang/skills/labels?q=P0
 [P1]: https://github.com/dart-lang/skills/labels?q=P1
