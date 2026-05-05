@@ -2,6 +2,10 @@
 
 Agent skills for Dart, maintained by the Dart team.
 
+A collection of skills providing tailored instructions for common Dart development workflows. By giving the agent actual domain expertise and repeatable workflows, you drastically reduce mistakes and ensure agents reliably complete the task following best practices.
+
+Skills are essentially simple folders of files that can be seen as complementary to MCP, where MCP gives an agent access to specialized tools and a skill teaches the agent how to use tools for a specific task.
+
 If you are using Dart to build Flutter apps, you may also be 
 interested in [Agent Skills for Flutter](https://github.com/flutter/skills).
 
