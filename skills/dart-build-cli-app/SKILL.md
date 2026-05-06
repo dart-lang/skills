@@ -44,7 +44,7 @@ Leverage the `io` and `stack_trace` packages to build robust, production-ready C
 *   Wrap the application execution in `Chain.capture()` from the `stack_trace` package to track asynchronous stack chains.
 *   Format output stack traces using `Trace.terse` or `Chain.terse` to strip noisy core library frames and present readable errors to the user.
 *   **Do not swallow exceptions** in lower-level logic or storage classes unless recovery is possible. Let them bubble up or rethrow them so higher-level commands know operations failed.
-*   **Fail fast and with non-zero exit codes**: Ensure operation failures result in descriptive error messages to `stderr` and appropriate non-zero exit codes (e.g., using `exit(1)` or throwing `UsageException` to trigger a 64 exit code).
+*   **Fail fast and with non-zero exit codes**: Ensure operation failures result in descriptive error messages to `stderr` and appropriate non-zero exit codes (e.g., using `exit(1)` or triggering a 64 exit code after a caught `UsageException`).
 
 ## Testing CLI Applications
 
