@@ -3,7 +3,7 @@ name: dart-build-cli-app
 description: Entrypoint structure, exit codes, cross-platform scripts. Use when building command line utilities, scripts, or applications.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Fri, 24 Apr 2026 15:10:18 GMT
+  last_modified: Fri, 04 May 2026 17:41:00 GMT
 ---
 # Building Dart CLI Applications
 
@@ -33,6 +33,7 @@ Implement the `args` package to manage command-line arguments, flags, and subcom
 *   If building a complex, multi-command CLI (like `git`): Implement `CommandRunner` and extend `Command` for each subcommand.
 *   Define global arguments on the `CommandRunner.argParser` and command-specific arguments on the individual `Command.argParser`.
 *   Catch `UsageException` to gracefully handle invalid arguments and display the automatically generated help text.
+*   **Validate Help Text Accuracy**: Ensure the help text provides all necessary information to run the tool. If the help text references a compiled executable name, and the user needs to add it to their PATH to run it that way, provide clear instructions on how to do so in the help text or description.
 
 ## Execution & Error Handling
 
@@ -42,8 +43,13 @@ Leverage the `io` and `stack_trace` packages to build robust, production-ready C
 *   Use `sharedStdIn` from the `io` package if multiple asynchronous listeners need sequential access to standard input.
 *   Wrap the application execution in `Chain.capture()` from the `stack_trace` package to track asynchronous stack chains.
 *   Format output stack traces using `Trace.terse` or `Chain.terse` to strip noisy core library frames and present readable errors to the user.
+*   **Do not swallow exceptions** in lower-level logic or storage classes unless recovery is possible. Let them bubble up or rethrow them so higher-level commands know operations failed.
+*   **Fail fast and with non-zero exit codes**: Ensure operation failures result in descriptive error messages to `stderr` and appropriate non-zero exit codes (e.g., using `exit(1)` or triggering a 64 exit code after a caught `UsageException`).
 
 ## Testing CLI Applications
+
+> [!IMPORTANT]
+> **All new commands and significant features must be covered by automated tests.** Manual verification is not sufficient for testing logic. However, manual verification of help text and user experience (UX) is still required to ensure the interface is intuitive and correct.
 
 Use `test_process` and `test_descriptor` to write high-fidelity integration tests for your CLI.
 
@@ -86,7 +92,9 @@ Example: `dart compile exe --target-os=linux --target-arch=arm64 bin/cli.dart`
 - [ ] Register command-specific flags in the constructor using `argParser.addFlag()` or `argParser.addOption()`.
 - [ ] Implement the `run()` method with the core logic.
 - [ ] Register the new command in the `CommandRunner` instance in `bin/cli.dart` using `addCommand()`.
+- [ ] Create tests for the new command in the `test/` directory using `test_process` or standard tests.
 - [ ] Run validator -> Execute `dart run bin/cli.dart help <command_name>` to verify help text generation.
+- [ ] Verify final UX: Compile the application using `dart compile exe` and run the resulting executable to verify the target user experience (e.g., `./bin/cli <command>`).
 
 ### Task Progress: Compile and Release Native Executable
 - [ ] Run validator -> Execute `dart format . --set-exit-if-changed` to ensure code formatting.
