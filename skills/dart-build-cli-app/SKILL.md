@@ -27,7 +27,7 @@ Initialize new CLI projects using the official Dart template to ensure standard 
 
 ## Argument Parsing & Command Routing
 
-Implement the `args` package to manage command-line arguments, flags, and subcommands.
+Import the `args` package to manage command-line arguments, flags, and subcommands.
 
 *   If building a simple script: Use `ArgParser` directly to define flags (`addFlag`) and options (`addOption`).
 *   If building a complex, multi-command CLI (like `git`): Implement `CommandRunner` and extend `Command` for each subcommand.
