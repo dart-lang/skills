@@ -324,3 +324,25 @@
     - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
     - https://pub.dev/packages/checks
     - https://pub.dev/packages/matcher
+- name: dart-understand-api-shape
+  description: Efficiently discover and understand the public API shape (classes, functions, constructors, properties) of a Dart package or module using Dart MCP tools, version audits, and diagnostic strategies.
+  examplePrompt: "Help me understand the API shape of a package"
+  instructions: |
+    1.  **Verify Locally Resolved Package Version:**
+        *   Check the exact, pinned version of the package in `pubspec.lock` before relying on online documentation to avoid version mismatch compilation errors.
+    2.  **Locate and Parse Public Entry Points:**
+        *   Inspect files directly under `lib/` (such as `lib/package_name.dart`) using `read_package_uris` rather than diving into internal `lib/src/` files.
+        *   Analyze `export` statements (with `show`, `hide`, or conditional platform clauses) to map out the public API facade.
+    3.  **Differentiate Platform-Specific Implementations:**
+        *   Be alert to conditional exports (`if (dart.library.io)`). During local analysis or when using server-specific features, import the platform entry points directly (e.g. `package:package_name/server.dart`) instead of the generic browser-stub defaults.
+    4.  **Leverage Dart MCP Server Tools:**
+        *   Use `read_package_uris` to read dependencies cleanly.
+        *   Use `rip_grep_packages` to instantly find class headers, constructors, and extension definitions in package dependencies.
+        *   Use `lsp` with `resolveWorkspaceSymbol` for semantic search, with an immediate fallback to `rip_grep_packages` if indexing is slow or hangs.
+    5.  **Leverage Core Diagnostic & Syntax Features:**
+        *   Auditing constructor signatures (positional, named, required, or optional).
+        *   Recognize and use Dot Shorthands (e.g., `[.info('Message')]` inside collections expecting `List<LogEntry>`), understanding that they are resolved as constructors on the expected target type.
+  resources:
+    - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
+    - https://dart.dev/language/versioning
+    - https://dart.dev/language/extension-methods

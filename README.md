@@ -49,3 +49,5 @@ Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for more information.
 | [dart-resolve-package-conflicts](skills/dart-resolve-package-conflicts/SKILL.md) | Workflow for fixing package version conflicts. Use this when `pub get` fails due to incompatible package versions. | Resolve the dependency conflicts in my pubspec |
 | [dart-run-static-analysis](skills/dart-run-static-analysis/SKILL.md) | Execute `dart analyze` to identify warnings and errors, and use `dart fix --apply` to automatically resolve mechanical lint issues. Use during development to ensure code quality and before committing changes. | Run static analysis and fix the issues |
 | [dart-use-pattern-matching](skills/dart-use-pattern-matching/SKILL.md) | Use switch expressions and pattern matching where appropriate | Use switch expressions and pattern matching in the Point class |
+| [dart-understand-api-shape](skills/dart-understand-api-shape/SKILL.md) | Discover and understand the public API shape (classes, functions, constructors, properties) of a package or module. | Help me understand the API of this package |
+
