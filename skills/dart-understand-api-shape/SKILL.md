@@ -54,8 +54,9 @@ Look out for export lines using `if (dart.library.io)` or `if (dart.library.js_i
 
 ### Step 4: Analyze Existing Tests and Examples
 The intended usage of an API is best documented by its author's own examples and test suites.
-- **Browse `example/`:** Look for real-world integration paths in the package's example files.
-- **Browse `test/`:** Look at how tests instantiate classes, pass arguments, and call methods. Tests provide highly reliable, executable specifications of the API.
+- **Find and List Examples:** Use the `read_package_uris` MCP tool to list the contents of the package's example directory (e.g., `package-root:package_name/example`). This allows you to discover example files without needing to know their exact names.
+- **Read Example Implementation:** Use `read_package_uris` to read the discovered example files. Often, reading a well-structured example is far more efficient and effective for understanding the API's expected usage than searching class definitions or docs.
+- **Browse `test/`:** Use `read_package_uris` to inspect how unit/integration tests instantiate classes, pass arguments, and call methods under different scenarios. Tests provide executable, highly reliable specifications of the API.
 
 ---
 
@@ -89,10 +90,11 @@ If you find a class, constructor, or method documented on a website or in an AI 
 
 Rather than manually opening files or downloading packages, use the highly efficient tools provided by the **Dart MCP Server**:
 
-### 1. `read_package_uris` (Instant file reading)
-Use this to inspect any entrypoint or internal file directly within dependencies without searching the disk.
-* **Usage:** Pass package scheme URIs (e.g., `package:package_name/library.dart` or `package-root:package_name/example/main.dart`).
-* **Best for:** Parsing public export structures and looking up core class headers.
+### 1. `read_package_uris` (Instant file and directory reading)
+Use this to inspect any entrypoint, internal file, or directory structure within dependencies without searching the disk.
+* **Usage:** Pass package scheme URIs. You can pass file paths (e.g., `package:package_name/library.dart`, `package-root:package_name/example/main.dart`) or directory paths (e.g., `package-root:package_name/example`).
+* **Directory Discovery:** If you pass a directory path like `package-root:package_name/example`, `read_package_uris` will list the files within that folder. This is an extremely powerful way to discover what examples exist in a dependency.
+* **Best for:** Listing example folders, parsing public export structures, and looking up core class headers.
 
 ### 2. `rip_grep_packages` (Instant search)
 Use this to execute high-precision regex searches across the `lib` folder of dependency packages.
@@ -112,13 +114,13 @@ In multi-platform frameworks (such as cross-platform web or native packages), li
 
 **The conditional export pattern:**
 ```dart
-export 'src/client_stub.dart' 
-    if (dart.library.io) 'src/server_implementation.dart' 
+export 'src/client_stub.dart'
+    if (dart.library.io) 'src/server_implementation.dart'
     show Client;
 ```
 
 ### The Pitfall: Defaulting to Stubs
-During static analysis in your local workspace, the analyzer's environment frequently defaults to a non-IO configuration. 
+During static analysis in your local workspace, the analyzer's environment frequently defaults to a non-IO configuration.
 - If you import the generic entry point (`package:net_widgets/net_widgets.dart`), the compiler maps `Client` to `client_stub.dart`.
 - Because the stub does not implement all full-featured methods (which may only exist on server/IO platforms), `client_stub.dart` lacks specific constructors or methods.
 - This results in compilation errors like: `The class 'Client' doesn't have an unnamed constructor.` or `Method not found.`
@@ -211,4 +213,3 @@ To integrate a multi-platform package like `net_widgets` safely without getting 
 ## Related Skills
 
 - **[dart-resolve-package-conflicts](https://github.com/dart-lang/skills/blob/main/skills/dart-resolve-package-conflicts/SKILL.md):** If your local version check (`pubspec.lock`) reveals you are constrained to an older version of a package because of a version conflict, use this workflow to audit and upgrade your dependencies.
-
