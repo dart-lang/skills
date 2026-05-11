@@ -23,7 +23,7 @@ Design Dart classes to support dependency injection. Isolate complex external de
 - Utilize Dart's object-oriented features (classes, mixins) to define clear interfaces for external interactions.
 
 ## Managing Dependencies
-Configure the `pubspec.yaml` file with the necessary testing and code generation packages. 
+Configure the `pubspec.yaml` file with the necessary testing and code generation packages.
 
 - Add runtime dependencies (e.g., `package:http`) using `dart pub add http`.
 - Add testing dependencies using `dart pub add dev:test dev:mockito dev:build_runner`.
@@ -67,7 +67,7 @@ Use the following checklist to implement and verify mocked unit tests.
 If tests fail or `build_runner` encounters errors:
 1. **Run validator:** Execute `dart test` or `dart run build_runner build`.
 2. **Review errors:** Check for missing stubs, mismatched argument matchers, or syntax errors in the generated files.
-3. **Fix:** 
+3. **Fix:**
    - If a mock method throws an unexpected null error, ensure you used `@GenerateNiceMocks`.
    - If an async stub throws an `ArgumentError`, change `thenReturn` to `thenAnswer`.
    - If `build_runner` fails, ensure the `.mocks.dart` import matches the file name exactly.
@@ -133,7 +133,7 @@ void main() {
 
       // Assert
       expect(result, 'Success');
-      
+
       // Verify the mock was called with the correct Uri
       verify(mockHttpClient.get(Uri.parse('https://api.example.com/data'))).called(1);
     });

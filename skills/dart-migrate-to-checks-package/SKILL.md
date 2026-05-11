@@ -15,7 +15,7 @@ metadata:
 - [Examples](#examples)
 
 ## Dependency Management
-Manage dependencies using the Dart Tooling MCP Server `pub` tool or standard CLI commands. 
+Manage dependencies using the Dart Tooling MCP Server `pub` tool or standard CLI commands.
 
 - Add `package:checks` as a `dev_dependency` using `dart pub add dev:checks`.
 - Remove `package:matcher` if it is explicitly listed in the `pubspec.yaml` (note: it is often transitively included by `package:test`, which is fine).
@@ -28,7 +28,7 @@ Transition test assertions from the `package:matcher` syntax to the literate API
 - **Type Checking:** Replace `expect(actual, isA<Type>())` with `check(actual).isA<Type>()`.
 - **Property Extraction:** Replace `expect(actual.property, expected)` with `check(actual).has((a) => a.property, 'property name').equals(expected)`.
 - **Cascades for Multiple Checks:** Use Dart's cascade operator (`..`) to chain multiple expectations on a single subject.
-- **Asynchronous Expectations:** 
+- **Asynchronous Expectations:**
   - If checking a `Future`, `await` the `check` call: `await check(someFuture).completes((r) => r.equals(expected));`.
   - If checking a `Stream`, wrap it in a `StreamQueue` for multiple checks, or use `.withQueue` for single/broadcast checks.
 

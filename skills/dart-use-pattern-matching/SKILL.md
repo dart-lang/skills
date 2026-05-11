@@ -127,7 +127,7 @@ var (a, b) = ('left', 'right');
 (b, a) = (a, b); // Swap values
 
 // Destructuring a function return
-var (name, age) = getUserInfo(); 
+var (name, age) = getUserInfo();
 ```
 
 ### Guard Clauses and Logical-or

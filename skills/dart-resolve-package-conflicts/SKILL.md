@@ -17,7 +17,7 @@ metadata:
 
 ## Core Concepts
 
-Dart enforces a strict single-version rule for dependencies: a project and all its transitive dependencies must resolve to a single, shared version of any given package. This prevents runtime type mismatches but introduces the risk of "version lock." 
+Dart enforces a strict single-version rule for dependencies: a project and all its transitive dependencies must resolve to a single, shared version of any given package. This prevents runtime type mismatches but introduces the risk of "version lock."
 
 To mitigate version lock, Dart relies on version constraints rather than pinned versions in the `pubspec.yaml`. The `pubspec.lock` file maintains the exact resolved versions for reproducible builds.
 
