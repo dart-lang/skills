@@ -165,7 +165,7 @@ void main() {
 
     // 2. Spawn the CLI process
     final process = await TestProcess.start(
-      'dart', 
+      'dart',
       ['run', 'bin/cli.dart', 'process', '--path', '${d.sandbox}/project']
     );
 

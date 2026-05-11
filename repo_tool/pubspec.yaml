@@ -1,0 +1,19 @@
+name: repo_tool
+description: Repo tooling to help validate dart skills.
+version: 1.0.0
+
+environment:
+  sdk: ^3.11.6
+
+dependencies:
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+  logging: ^1.2.0
+  dart_skills_lint:
+    git:
+      url: https://github.com/flutter/skills.git
+      path: tool/dart_skills_lint
+      ref: 76a8212ba25b3926311baab1f980ab995643c208
