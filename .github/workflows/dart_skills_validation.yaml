@@ -1,0 +1,43 @@
+name: dart_skills_validation
+permissions: read-all
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'repo_tool/**'
+      - '.github/workflows/dart_skills_validation.yaml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'skills/**'
+      - 'repo_tool/**'
+      - '.github/workflows/dart_skills_validation.yaml'
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+
+defaults:
+  run:
+    working-directory: repo_tool
+
+jobs:
+  analyze_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Dart
+      uses: dart-lang/setup-dart@v1
+
+    - name: Install dependencies
+      run: dart pub get
+
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+
+    - name: Analyze project source
+      run: dart analyze --fatal-infos
+
+    - name: Run tests
+      run: dart test

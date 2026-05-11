@@ -16,7 +16,7 @@ metadata:
 
 ## Analysis Configuration
 
-Configure the Dart analyzer using the `analysis_options.yaml` file located at the package root. 
+Configure the Dart analyzer using the `analysis_options.yaml` file located at the package root.
 
 - **Base Configuration:** Always include a standard rule set (e.g., `package:lints/recommended.yaml` or `package:flutter_lints/flutter.yaml`) using the `include:` directive.
 - **Strict Type Checks:** Enable strict type checks under the `analyzer: language:` node to prevent implicit downcasts and dynamic inferences. Set `strict-casts: true`, `strict-inference: true`, and `strict-raw-types: true`.
@@ -97,7 +97,7 @@ formatter:
 void processData() {
   // Suppress for a specific line
   // ignore: invalid_assignment
-  int x = ''; 
+  int x = '';
   
   const y = 10; // ignore: constant_identifier_names
 }

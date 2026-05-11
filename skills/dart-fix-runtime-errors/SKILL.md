@@ -19,7 +19,7 @@ metadata:
 ## Core Concepts & Guidelines
 
 ### Type System & Soundness
-Enforce Dart's sound type system to prevent runtime invalid states. 
+Enforce Dart's sound type system to prevent runtime invalid states.
 
 *   **Method Overrides:** Maintain sound return types (covariant) and parameter types (contravariant). Never tighten a parameter type in a subclass unless explicitly marked with the `covariant` keyword.
 *   **Generics & Collections:** Add explicit type annotations to generic classes (e.g., `List<T>`, `Map<K, V>`). Never assign a `List<dynamic>` to a typed list (e.g., `List<Cat>`).
@@ -36,7 +36,7 @@ Eliminate static errors related to null safety by correctly managing variable in
 ### Error Handling
 Distinguish between recoverable exceptions and unrecoverable errors.
 
-*   **Catching:** Catch `Exception` subtypes for recoverable failures. 
+*   **Catching:** Catch `Exception` subtypes for recoverable failures.
 *   **Errors:** Never explicitly catch `Error` or its subtypes (e.g., `TypeError`, `ArgumentError`). Errors indicate programming bugs that must be fixed, not caught. Enforce this by enabling the `avoid_catching_errors` linter rule.
 *   **Rethrowing:** Use `rethrow` inside a `catch` block to propagate an exception while preserving its original stack trace.
 

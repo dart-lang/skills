@@ -16,7 +16,7 @@ metadata:
 
 ## Testing Fundamentals
 
-Structure your test suites using the standard Dart testing paradigms. Use `package:test` for Dart projects and `flutter_test` for Flutter projects. 
+Structure your test suites using the standard Dart testing paradigms. Use `package:test` for Dart projects and `flutter_test` for Flutter projects.
 
 - **Unit Tests:** Verify individual functions, methods, or classes.
 - **Component/Widget Tests:** Verify component behavior, layout, and interaction using mock objects (`package:mockito`).

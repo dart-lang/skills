@@ -22,7 +22,7 @@ Organize test files to mirror the `lib` directory structure to maintain predicta
 * If writing integration tests, place them in an `integration_test` directory at the root of the package.
 
 ## Writing Tests
-Utilize `package:test` as the standard testing library for Dart applications. 
+Utilize `package:test` as the standard testing library for Dart applications.
 
 * Import `package:test/test.dart` (or `package:flutter_test/flutter_test.dart` for Flutter).
 * Group related tests using the `group()` function to provide shared context.
