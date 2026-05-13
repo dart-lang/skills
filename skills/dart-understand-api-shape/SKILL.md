@@ -8,7 +8,6 @@ metadata:
 # Understanding Dart API Shapes
 
 ## Contents
-- [When to Use This Skill](#when-to-use-this-skill)
 - [Workflow: Discovering API Shapes](#workflow-discovering-api-shapes)
 - [Auditing Locally Resolved Versions](#auditing-locally-resolved-versions)
 - [Leveraging Dart MCP Server Tools](#leveraging-dart-mcp-server-tools)
@@ -17,16 +16,6 @@ metadata:
 - [Common Pitfalls & Constraints](#common-pitfalls--constraints)
 - [Example Walkthrough](#example-walkthrough)
 - [Related Skills](#related-skills)
-
-## When to Use This Skill
-
-Apply this skill when:
-- **Integrating a Package for the First Time:** You need to know the primary entry points and classes of a new dependency.
-- **Unresolved Symbols or Compilation Errors:** You encounter errors like `Method not found`, `Undefined class`, or `Wrong number of arguments`.
-- **Refactoring or Modernizing Code:** You need to know if a modern equivalent or constructor exists for a deprecated or legacy class/method.
-- **Writing Unit Tests or Mocks:** You need to determine the exact types of parameters and constructor arguments to correctly build mock objects.
-
----
 
 ## Workflow: Discovering API Shapes
 
@@ -104,7 +93,7 @@ Use this to execute high-precision regex searches across the `lib` folder of dep
 ### 3. `lsp` (Semantic intelligence)
 Interacts with the Dart Language Server Protocol.
 * **Usage:** Call `resolveWorkspaceSymbol` to fuzzy-search for a symbol by name, or `hover` to get parameter signatures at a file position.
-* **Fallback Warning:** If the language server is currently starting up or indexing (which can cause it to hang or take a long time), **abort the LSP call immediately** and use `rip_grep_packages` + `read_package_uris` instead. This is a much faster, deterministic recovery loop.
+* **Note:** If the language server is unavailable or indexing, rely on `read_package_uris` and `rip_grep_packages` as your deterministic discovery mechanism.
 
 ---
 
@@ -125,27 +114,20 @@ During static analysis in your local workspace, the analyzer's environment frequ
 - Because the stub does not implement all full-featured methods (which may only exist on server/IO platforms), `client_stub.dart` lacks specific constructors or methods.
 - This results in compilation errors like: `The class 'Client' doesn't have an unnamed constructor.` or `Method not found.`
 
-### The Solution: Import Platform Entry Points Directly
-When writing platform-specific code (e.g., server-side or native-only), skip the generic entry point and import the platform-specific entry point directly if one is provided:
-* **Instead of:** `import 'package:net_widgets/net_widgets.dart';`
-* **Prefer:** `import 'package:net_widgets/server.dart';` (which directly exports the full-featured implementation and configuration).
+### Resolving Platform-Specific Symbols
+When analyzing platform-specific components (e.g., server-side or native-only), inspect the platform-specific entry point directly rather than the generic facade:
+* Inspect `package:net_widgets/server.dart` (which exports the full-featured implementation) rather than `package:net_widgets/net_widgets.dart`.
 
 ---
 
 ## Key Diagnostic & Syntax Strategies
 
-### 1. Constructor Signatures
+### Constructor Signatures
 Dart supports multiple types of constructors. Always differentiate:
 - **Default Constructor:** `ClassName(...)`
 - **Named Constructors:** `ClassName.fromJson(...)`
 - **Factory Constructors:** `factory ClassName(...)` (often returns subtypes or cached instances)
 - **Const Constructors:** `const ClassName(...)` (must be called with `const` if all arguments are constants)
-
-### 2. Dot Shorthands (Dart 3.6+)
-If you see a dot-prefixed call within a collection literal (like `[.info('value')]`), it is a **Dot Shorthand**.
-- The dot shorthand omits the type name when it can be confidently inferred from the context.
-- In a list expecting `List<LogEntry>`, `[.info('Message')]` is resolved by the compiler as `[LogEntry.info('Message')]` because the expected type of elements in the list is `LogEntry` and it defines an `info` constructor/factory.
-- When writing code, prefer this syntax to reduce visual noise.
 
 
 ---
@@ -167,7 +149,7 @@ Use these precise `ripgrep` and MCP commands to locate API details fast:
 | Read resolved version in lockfile | View `pubspec.lock` |
 | Read exports of a package | `read_package_uris` with URI `["package:package_name/package_name.dart"]` |
 | Find a Class Definition | `rip_grep_packages` with arguments `["class Client"]` |
-| Retrieve Constructor Signature | `rip_grep_packages` with arguments `["class Client", "-A", "15"]` |
+| Retrieve Class Outlines & Constructors | `read_package_uris` on the declaring library file |
 | Search for Extension Methods | `rip_grep_packages` with arguments `["extension .* on Client"]` |
 
 ---
