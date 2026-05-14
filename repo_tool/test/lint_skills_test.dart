@@ -7,6 +7,8 @@ import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
+const String _configFilePath = 'dart_skills_lint.yaml';
+
 void main() {
   test('Run skills linter', () async {
     // Enable logging to see detailed validation errors in test output.
@@ -16,13 +18,10 @@ void main() {
         .listen((record) => print(record.message));
 
     try {
-      final isValid = await validateSkills(
-        skillDirPaths: ['../skills'],
-        resolvedRules: {
-          'check-relative-paths': AnalysisSeverity.error,
-          'check-trailing-whitespace': AnalysisSeverity.error,
-        },
+      final Configuration config = await ConfigParser.loadConfig(
+        path: _configFilePath,
       );
+      final bool isValid = await validateSkills(config: config);
       expect(
         isValid,
         isTrue,
