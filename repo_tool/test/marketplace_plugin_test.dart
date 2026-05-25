@@ -8,34 +8,15 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-/// Walks up from [start] until it finds `.claude-plugin/marketplace.json`,
-/// which marks the repository root. Lets the test run from the repo root or
-/// from the package's working directory in CI.
-Directory _findRepoRoot(Directory start) {
-  var dir = start;
-  while (true) {
-    final marker = File(p.join(dir.path, '.claude-plugin', 'marketplace.json'));
-    if (marker.existsSync()) {
-      return dir;
-    }
-    final parent = dir.parent;
-    if (p.equals(parent.path, dir.path)) {
-      throw StateError(
-        'Could not find .claude-plugin/marketplace.json walking up from '
-        '${start.path}',
-      );
-    }
-    dir = parent;
-  }
-}
-
 Map<String, dynamic> _readJson(File file) {
   expect(file.existsSync(), isTrue, reason: '${file.path} should exist');
   return jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
 }
 
 void main() {
-  final repoRoot = _findRepoRoot(Directory.current);
+  // `dart test` runs from the repo_tool package directory, so the repository
+  // root is its parent.
+  final repoRoot = Directory.current.parent;
   final marketplaceFile = File(
     p.join(repoRoot.path, '.claude-plugin', 'marketplace.json'),
   );
