@@ -1,0 +1,13 @@
+{
+  "name": "dart-skills",
+  "owner": { "name": "The Dart team" },
+  "description": "Agent skills for Dart, maintained by the Dart team.",
+  "plugins": [
+    {
+      "name": "dart-skills",
+      "source": "./plugins/dart-skills",
+      "description": "A collection of skills providing tailored instructions for common Dart development workflows.",
+      "category": "development"
+    }
+  ]
+}

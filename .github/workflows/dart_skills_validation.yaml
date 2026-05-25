@@ -6,12 +6,16 @@ on:
     paths:
       - 'skills/**'
       - 'repo_tool/**'
+      - '.claude-plugin/**'
+      - 'plugins/**'
       - '.github/workflows/dart_skills_validation.yaml'
   push:
     branches: [ main ]
     paths:
       - 'skills/**'
       - 'repo_tool/**'
+      - '.claude-plugin/**'
+      - 'plugins/**'
       - '.github/workflows/dart_skills_validation.yaml'
   schedule:
     - cron: '0 0 * * 0' # weekly
@@ -22,10 +26,35 @@ defaults:
 
 jobs:
   analyze_and_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    # The windows-latest leg doubles as the Windows-symlink check: if the
+    # plugins/dart-skills/skills symlink is not materialized on checkout, the
+    # marketplace symlink test fails here.
+    - uses: actions/checkout@v4
+
+    - name: Setup Dart
+      uses: dart-lang/setup-dart@v1
+
+    - name: Install dependencies
+      run: dart pub get
+
+    - name: Analyze project source
+      run: dart analyze --fatal-infos
+
+    - name: Run tests
+      run: dart test
+
+  formatting:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Dart
       uses: dart-lang/setup-dart@v1
@@ -36,8 +65,27 @@ jobs:
     - name: Verify formatting
       run: dart format --output=none --set-exit-if-changed .
 
-    - name: Analyze project source
-      run: dart analyze --fatal-infos
+  validate:
+    runs-on: ubuntu-latest
+    # Override the workflow-level working directory so the validator runs
+    # against the repository root, not repo_tool.
+    defaults:
+      run:
+        working-directory: .
 
-    - name: Run tests
-      run: dart test
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install Claude Code CLI
+      run: npm install -g @anthropic-ai/claude-code
+
+    - name: Validate marketplace manifest
+      run: claude plugin validate .
+
+    - name: Validate plugin manifest
+      run: claude plugin validate ./plugins/dart-skills

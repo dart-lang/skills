@@ -19,6 +19,16 @@ folder that most agents use.
 npx skills add dart-lang/skills --skill '*' --agent universal
 ```
 
+### Claude Code plugin
+
+If you use [Claude Code](https://claude.com/claude-code), these skills are also
+available as a plugin marketplace. Add the marketplace and install the plugin:
+
+```text
+/plugin marketplace add dart-lang/skills
+/plugin install dart-skills@dart-skills
+```
+
 ## Updating Skills
 
 To update, run the following command:

@@ -1,0 +1,9 @@
+{
+  "name": "dart-skills",
+  "description": "A collection of skills providing tailored instructions for common Dart development workflows.",
+  "author": { "name": "The Dart team" },
+  "homepage": "https://github.com/dart-lang/skills",
+  "repository": "https://github.com/dart-lang/skills",
+  "license": "BSD-3-Clause",
+  "keywords": ["dart", "skills"]
+}
