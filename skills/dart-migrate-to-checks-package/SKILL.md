@@ -32,14 +32,6 @@ Transition test assertions from the `package:matcher` syntax to the literate API
   - If checking a `Future`, `await` the `check` call: `await check(someFuture).completes((r) => r.equals(expected));`.
   - If checking a `Stream`, wrap it in a `StreamQueue` for multiple checks, or use `.withQueue` for single/broadcast checks.
 
-## Utilizing Dart MCP Tools
-Leverage the Dart MCP Server tools to automate and validate the migration process.
-
-- Use `pub` to run `dart pub get` or `dart pub add`.
-- Use `analyze_files` to run static analysis on the project or specific paths.
-- Use `run_tests` to execute Dart or Flutter tests with an agent-centric UX. ALWAYS use this instead of shell commands like `dart test`.
-- Use `dart_fix` to apply automated fixes if applicable.
-
 ## Migration Workflow
 
 Copy and use the following checklist to track progress when migrating a test suite:
