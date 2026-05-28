@@ -359,3 +359,37 @@
   resources:
     - https://pub.dev/packages/ffigen
     - https://dart.dev/interop/c-interop
+- name: dart-ffi-code-assets
+  description: Guide agents to compile C/C++ code into Code Assets using the
+    Native Assets feature (via build and link hooks using `package:hooks` and
+    `package:native_toolchain_c`). Covers local compilation, linker
+    tree-shaking, and downloading precompiled libraries with MD5 validation.
+  examplePrompt: "Compile C code into Code Assets using native assets hooks."
+  instructions: |
+    1.  **Orchestrate via package:hooks:**
+        *   Always write compile and link hooks inside the `hook/` folder at
+            the package root (`hook/build.dart` and `hook/link.dart`).
+    2.  **Compile C Source using CBuilder:**
+        *   Standardize on using `CBuilder` or `CLibrary` from
+            `package:native_toolchain_c` to execute compiler toolchains.
+        *   Do not invoke compiler commands (like raw `clang` or `gcc`) via
+            shell processes.
+    3.  **Implement Linker Optimization (Tree-Shaking):**
+        *   Filter exported dynamic library symbols by setting `recordedUses`
+            lookup maps with `LinkerOptions.treeshake` inside `hook/link.dart`.
+        *   Map target Dart Method names back to C symbols using a mapping
+            file (e.g., `sqlite3.record_use_mapping.g.dart`).
+    4.  **Integrity and Recovery on Precompiled Downloads:**
+        *   If pulling precompiled libraries dynamically, verify binary MD5
+            hashes against a lookup table in sources to ensure security.
+        *   Provide local-compilation fallback triggers (e.g. `local_build`)
+            to enable offline compilation execution.
+    5.  **Verify and Validate:**
+        *   Ensure generated and handwritten sources strictly contain the
+            copyright block, satisfy formatting (`dart format`), and pass
+            static analysis checks.
+  resources:
+    - https://pub.dev/packages/code_assets
+    - https://pub.dev/packages/hooks
+    - https://pub.dev/packages/native_toolchain_c
+    - https://dart.dev/tools/native-assets
