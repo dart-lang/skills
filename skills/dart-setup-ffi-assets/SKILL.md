@@ -1,9 +1,9 @@
 ---
-name: dart-ffi-code-assets
-description: Guide agents to compile C/C++ code into Code Assets using the Native Assets feature (via build and link hooks using `package:hooks` and `package:native_toolchain_c`). Covers local dynamic compilation, linker tree-shaking via `record_use` tracking, and alternative precompiled library download workflows with cryptographic hash validation.
+name: dart-setup-ffi-assets
+description: "Guides agents in compiling and packaging C/C++ source code into dynamic or static libraries (Code Assets) using Dart's Native Assets hook system (via hook/build.dart and hook/link.dart utilizing package:hooks and package:native_toolchain_c). Use when a user asks to: 'setup native assets', 'compile C/C++ source code', 'bundle dynamic libraries', 'build native C code', 'link native assets', 'implement build.dart or link.dart hooks', or 'integrate C/C++ interop in Dart/Flutter'. Helps agents avoid manual toolchain orchestration and configures secure hash-validated binary downloads or advanced linker tree-shaking with package:record_use mapping."
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Thu, 28 May 2026 07:51:00 GMT
+  last_modified: Fri, 29 May 2026 09:10:00 GMT
 ---
 # Compiling C Code into Code Assets with Native Assets Hooks
 
@@ -14,7 +14,9 @@ Integrate and automate the compilation and packaging of native C/C++ source code
 - [Constraints](#constraints)
 - [Native Interop Packages](#native-interop-packages)
 - [Step-by-Step Workflow](#step-by-step-workflow)
+- [Choosing an Integration Approach](#choosing-an-integration-approach)
 - [Method 1: Local Compilation with Linker Tree-Shaking (Recommended)](#method-1-local-compilation-with-linker-tree-shaking-recommended)
+  - [Prerequisite Host Compiler Toolchains](#prerequisite-host-compiler-toolchains)
   - [C Source and Bindings Setup](#c-source-and-bindings-setup)
   - [Defining the C Library Build Spec](#defining-the-c-library-build-spec)
   - [Implementing hook/build.dart](#implementing-hookbuilddart)
@@ -23,6 +25,10 @@ Integrate and automate the compilation and packaging of native C/C++ source code
   - [Why Download Precompiled Binaries?](#why-download-precompiled-binaries)
   - [Implementing Precompiled Dynamic Downloads](#implementing-precompiled-dynamic-downloads)
 - [Verification Checklist](#verification-checklist)
+  - [1. Local Execution Sandbox](#1-local-execution-sandbox)
+  - [2. Verify Target Outputs](#2-verify-target-outputs)
+  - [3. Verify Tree-Shaking Stripping](#3-verify-tree-shaking-stripping)
+  - [4. Verify Offline Compliance (User Defines)](#4-verify-offline-compliance-user-defines)
 
 ---
 
@@ -100,19 +106,44 @@ dart test
 
 ---
 
+## Choosing an Integration Approach
+
+There are two primary methods for integrating and delivering C/C++ native assets in Dart. Select the one that matches your project requirements:
+
+| Aspect | Method 1: Local Compilation & Tree-Shaking | Method 2: Precompiled Downloads |
+| :--- | :--- | :--- |
+| **Primary Use Case** | When C/C++ source code is included directly in the package and you want maximum size optimization. | When compiling locally is slow/complex, or when avoiding developer host toolchain requirements. |
+| **Host Toolchain Requirements** | Requires pre-installed platform C compiler (Xcode tools, MSVC, GCC). | Zero compiler setup required on developer/user machines. |
+| **Binary Optimization** | Premium. Unused symbols are completely tree-shaken, decreasing library size. | Standard. Standard compiled binaries are shipped as-is. |
+| **Offline Setup** | Fully compliant. Works completely offline. | Requires network access to download libraries, with offline fallback. |
+
+---
+
 ## Method 1: Local Compilation with Linker Tree-Shaking (Recommended)
 
 In this approach, the build hook invokes local toolchains (GCC, Clang, MSVC) to compile source files directly. The link hook subsequently filters output symbols utilizing compiler options, retaining only target methods invoked in user code. This represents the standard, robust SQLite pattern under `pkgs/code_assets/example/sqlite`.
+
+### Prerequisite Host Compiler Toolchains
+
+Since `package:native_toolchain_c` delegates actual dynamic compilation to the host operating system's default toolchain, the development machine **must** have one of the following compiler packages pre-installed:
+
+*   **macOS**: Xcode Command Line Tools. Install via:
+    ```bash
+    xcode-select --install
+    ```
+*   **Linux**: GCC or Clang. Install via:
+    ```bash
+    sudo apt install build-essential
+    ```
+*   **Windows**: MSVC (Microsoft Visual C++). Install the **Visual Studio Installer** and select the **Desktop development with C++** workload.
+
+*Note: If no compatible toolchain is discovered on the host path, the build hook script will throw a compilation execution exception. Ensure to specify compiler constraints or adopt Method 2 if toolchains cannot be guaranteed.*
 
 ### C Source and Bindings Setup
 
 Assume a C source defining simple math functions at `third_party/sqlite/sqlite3.c` with its entry point header at `third_party/sqlite/sqlite3.h`:
 
 ```c
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 #ifndef SQLITE3_H_
 #define SQLITE3_H_
 
@@ -124,10 +155,6 @@ const char *sqlite3_libversion(void);
 We utilize a programmatic FFIgen script (`tool/ffigen.dart`) to create FFI bindings in `lib/src/third_party/sqlite3.g.dart`, enabling recorded usage tracking and producing the lookup metadata map in `lib/src/third_party/sqlite3.record_use_mapping.g.dart`:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 // AUTO-GENERATED FILE - DO NOT MODIFY.
 // Generated via ffigen.
 
@@ -141,15 +168,9 @@ const recordUseMapping = {
 Define the centralized library specification in `lib/src/c_library.dart`:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 
 /// The C build specification for the sqlite library.
-///
-/// Shared by the compilation build hook and optimization link hook.
 final cLibrary = CLibrary(
   name: 'sqlite3',
   assetName: 'src/third_party/sqlite3.g.dart',
@@ -162,17 +183,12 @@ final cLibrary = CLibrary(
 Implement `hook/build.dart` using `CLibrary.build`. This builds the library to a dynamic library (e.g. `.so`, `.dylib`, or `.dll`) inside the hook's target directory:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:sqlite/src/c_library.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
-    // Only build code assets if requested by the configuration
     if (input.config.buildCodeAssets) {
       await cLibrary.build(
         input: input,
@@ -193,10 +209,6 @@ void main(List<String> args) async {
 Implement the link optimization phase in `hook/link.dart`. This utilizes compiler tree-shaking options (`LinkerOptions.treeshake`) to compile a minimized, dead-code-eliminated binary based on symbol usage records:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'package:hooks/hooks.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:record_use/record_use.dart';
@@ -241,10 +253,6 @@ We configure our build hook to detect local compiler flags (e.g. `local_build`).
 Define target MD5 hash checks per platform file in your package sources:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 const assetHashes = {
   'libnative_add_macos_arm64.dylib': '4a88f50438a98402db2dbd47b59eb412',
   'libnative_add_linux_x64.so': '9f5e15043aa98402dcdbbd47b59ea520',
@@ -256,29 +264,21 @@ const assetHashes = {
 Implement the downloading and integrity check logic using dynamic target filename matching:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'dart:io';
 import 'package:code_assets/code_assets.dart';
 import 'package:crypto/crypto.dart';
 
 const version = '1.0.0';
 
-/// Resolves the release download URI
 Uri downloadUri(String target) => Uri.parse(
   'https://github.com/my-org/my-native-repo/releases/download/$version/$target',
 );
 
-/// Dynamic downloader mapping target OS/architecture records to prebuilt files
 Future<File> downloadAsset(
   OS targetOS,
   Architecture targetArchitecture,
   Directory outputDir,
 ) async {
-  // Construct platform-appropriate dynamic library name
-  // For example: libnative_add_macos_arm64.dylib
   final fileName = targetOS.dylibFileName('native_add_${targetOS.name}_${targetArchitecture.name}');
   final uri = downloadUri(fileName);
   
@@ -297,20 +297,16 @@ Future<File> downloadAsset(
   return targetFile;
 }
 
-/// Compute MD5 hash to confirm file download integrity and safety
 Future<String> hashAsset(File file) async {
   return md5.convert(await file.readAsBytes()).toString();
 }
 ```
 
-#### 3. Implementing hook/build.dart (`hook/build.dart`)
-Write the final, highly robust download build hook incorporating local compilation fallback:
+#### 3. Implementing `hook/build.dart`
+
+Write the final download build hook incorporating local compilation fallback:
 
 ```dart
-// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license[s] that can be found in the LICENSE file.
-
 import 'dart:io';
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
@@ -323,7 +319,6 @@ void main(List<String> args) async {
     final localBuild = input.userDefines['local_build'] as bool? ?? false;
 
     if (localBuild) {
-      // Fallback: developer requested compilation of local source files
       final name = 'native_add_${input.config.code.targetOS.name}_${input.config.code.targetArchitecture.name}';
       final builder = CBuilder.library(
         name: name,
@@ -332,15 +327,12 @@ void main(List<String> args) async {
       );
       await builder.run(input: input, output: output);
     } else {
-      // Preferred dynamic download execution
       final targetOS = input.config.code.targetOS;
       final targetArch = input.config.code.targetArchitecture;
       final outputDir = Directory.fromUri(input.outputDirectory);
 
-      // Download the prebuilt dynamic library file
       final file = await downloadAsset(targetOS, targetArch, outputDir);
 
-      // Hash integrity validation safeguard
       final fileHash = await hashAsset(file);
       final expectedFileName = targetOS.dylibFileName('native_add_${targetOS.name}_${targetArch.name}');
       final expectedHash = assetHashes[expectedFileName];
@@ -352,7 +344,6 @@ void main(List<String> args) async {
         );
       }
 
-      // Successfully record dynamic library asset into the build output
       output.assets.code.add(
         CodeAsset(
           package: input.packageName,
@@ -372,16 +363,57 @@ void main(List<String> args) async {
 
 Before declaring a build or link hook implementation complete, always perform the following checks:
 
-1.  **Local Execution Sandbox**: Run unit tests (`dart test`) and confirm hook compilation finishes with no errors.
-2.  **Verify Target Outputs**: Navigate inside the package target directory and check:
-    *   Dynamic libraries (`.dylib`, `.so`, or `.dll`) are successfully built/placed under the local configuration path `.dart_tool/resources/` or target output build folder.
-3.  **Perform Formatting & Analysis**:
-    ```bash
-    dart format hook/ lib/
-    dart analyze
-    ```
-4.  **Verify Tree-Shaking Stripping**: Ensure that compiled link outputs strictly eliminate unused symbols by inspecting link outputs or checking linkage size under production compilations:
-    ```bash
-    dart build cli bin/main.dart
-    ```
-5.  **Offline Compliance Check**: Verify that when `local_build: true` is configured in developer defines, the compile toolchain executes cleanly without network dependencies.
+### 1. Local Execution Sandbox
+Run unit tests and confirm the native assets compile/link process completes with no runtime or build tool exceptions:
+```bash
+dart test
+```
+
+### 2. Verify Target Outputs
+Navigate to your package target directory and verify that dynamic binary assets are created for the host system:
+*   **macOS**: Verify `.dart_tool/resources/` or target directories contain `.dylib` files.
+*   **Linux**: Verify `.dart_tool/resources/` or target directories contain `.so` files.
+*   **Windows**: Verify `.dart_tool/resources/` or target directories contain `.dll` files.
+
+### 3. Verify Tree-Shaking Stripping
+To ensure the link hook is actually stripping unused native symbols and compressing binary packaging, perform the following validation:
+
+1. Compile a production bundle of the CLI/app:
+   ```bash
+   dart build cli bin/main.dart
+   ```
+2. Navigate to the compiled build directory containing the dynamic library.
+3. Query the exported dynamic symbol tables:
+   *   **macOS**:
+       ```bash
+       nm -gU build/cli/lib/libsqlite3.dylib
+       ```
+   *   **Linux**:
+       ```bash
+       nm -D build/cli/lib/libsqlite3.so
+       ```
+   *   **Windows** (using MSVC Developer Command Prompt):
+       ```cmd
+       dumpbin /EXPORTS build\cli\lib\sqlite3.dll
+       ```
+4. **Confirm Target Exports**: Verify that the command outputs **only** the explicitly kept entry point functions (e.g. `sqlite3_libversion`) and does not output any unreferenced/stripped symbols.
+5. **No Bundle Scenario**: If the application does not import or invoke any methods from the native library:
+   - Verify that the link hook logs: `Skipping linking as no symbols are to be kept.`
+   - Verify that no library was built/placed in the production bundle (the `.dylib`/`.so`/`.dll` file is not generated, saving bundle size).
+
+### 4. Verify Offline Compliance (User Defines)
+Confirm offline compliance is fully active and the download fallback executes perfectly offline:
+
+1. Configure the `local_build: true` define for your package in the package's `pubspec.yaml` (or the workspace root `pubspec.yaml`):
+   ```yaml
+   hooks:
+     user_defines:
+       <your_package_name>:
+         local_build: true
+   ```
+2. Disable the machine's network adapter or run in a sandboxed offline shell.
+3. Launch unit tests:
+   ```bash
+   dart test
+   ```
+4. Verify the test suite successfully compiles local source files using host compilers, has no compile errors, and never attempts network download requests.
