@@ -324,3 +324,84 @@
     - https://raw.githubusercontent.com/dart-lang/ai/refs/heads/main/pkgs/dart_mcp_server/README.md
     - https://pub.dev/packages/checks
     - https://pub.dev/packages/matcher
+- name: dart-use-ffigen
+  description: Guide agents to use `package:ffigen` to automatically generate FFI
+    bindings instead of writing them manually. Use this skill when a task
+    involves writing new FFI bindings, extending C/Objective-C/Swift
+    integrations, or replacing hand-crafted `dart:ffi` setups.
+  examplePrompt: "Generate FFI bindings using package:ffigen."
+  instructions: |
+    1.  **Check/Add Dependencies:**
+        *   Verify the `pubspec.yaml` has `ffigen` under `dev_dependencies`.
+        *   Must use `ffigen` from `pub.dev` (e.g. `^20.1.1`). Use the Dart MCP
+            server or lookup the latest version on pub.
+    2.  **Formulate Paths Dynamically:**
+        *   Resolve paths dynamically relative to `Platform.script` to ensure
+            correct execution from any directory.
+        *   Third-party native headers should be located in `third_party/src/`
+            (otherwise first-party in `src/` is acceptable). Notify the user to
+            move them to standard locations if located elsewhere.
+        *   Target bindings with a third-party license must go under
+            `lib/src/third_party/` and strictly use the `.g.dart` file
+            extension.
+    3.  **Write and Configure Generator Script:**
+        *   Create `tool/ffigen.dart` and orchestrate the configuration using `FfiGenerator`.
+        *   Set positive matching arrays on `include` closures (e.g. `Functions.include`, `Structs.include`, `Enums.include`).
+        *   Identify leaf functions using `isLeaf` to bypass Dart-to-C switching overhead.
+        *   Enable recorded usage `recordUse: (_) => true` and set the tree-shake `recordUseMapping` mapping target to optimize performance and symbol size.
+        *   Provide premium license preambles (explicitly including the
+            copyright header of the target native header file) and
+            generation warnings in the generator output.
+    4.  **Run Code Generation:**
+        *   Execute `dart run tool/ffigen.dart` to create bindings and metadata mapping.
+    5.  **Verify, Format, and Analyze:**
+        *   Ensure code satisfies formatting checks and has zero compiler or static analysis warnings.
+  resources:
+    - https://pub.dev/packages/ffigen
+    - https://dart.dev/interop/c-interop
+- name: dart-setup-ffi-assets
+  description: Guides agents in compiling and packaging C/C++ source code into
+    dynamic or static libraries (Code Assets) using Dart's Native Assets hook
+    system (via build and link hooks using `package:hooks` and
+    `package:native_toolchain_c`). Covers local compilation, secure download
+    orchestration with hash validation, offline compiler overrides, and
+    advanced linker tree-shaking using `package:record_use`. Use when the
+    user requests to setup native assets, compile native source, or integrate
+    C/C++ interop in Dart/Flutter.
+  examplePrompt: "Setup native assets and compile C code with build/link hooks."
+  instructions: |
+    1.  **Orchestrate via package:hooks:**
+        *   Always write compile and link hooks inside the `hook/` folder at
+            the package root (`hook/build.dart` and `hook/link.dart`).
+    2.  **Compile C/C++ Source using CBuilder/CLibrary:**
+        *   Standardize on using `CBuilder` or `CLibrary` from
+            `package:native_toolchain_c` to execute compiler toolchains.
+        *   Never invoke raw compiler processes (like `gcc`, `clang`, or `msvc`)
+            via shell processes.
+        *   Prerequisite compiler toolchains must be installed on the host OS
+            (Xcode tools on macOS, GCC/Clang on Linux, MSVC on Windows).
+    3.  **Implement Linker Optimization (Tree-Shaking):**
+        *   Filter exported dynamic library symbols by setting `recordedUses`
+            lookup maps with `LinkerOptions.treeshake` inside `hook/link.dart`.
+        *   Map target Dart Method names back to C symbols using a mapping
+        *   Ensure that bindings wrappers match recorded private/underscored names.
+    4.  **Integrity and Recovery on Precompiled Downloads:**
+        *   If pulling precompiled libraries dynamically, verify binary MD5/SHA-256
+            hashes against lookup tables in sources to ensure security.
+        *   Support offline developers by providing fallbacks (such as local
+            compiler execution via `local_build: true` specified in `pubspec.yaml`
+            under the `hooks.user_defines.<package_name>` path).
+    5.  **Verify and Validate:**
+        *   Run standard test suites (`dart test`) and verify target outputs.
+        *   Inspect exported symbols using OS-level commands (`nm -gU` on macOS,
+            `nm -D` on Linux, `dumpbin /EXPORTS` on Windows) to verify tree-shaking
+            successfully stripped unused symbols.
+        *   Confirm the linker skips compilation/linking entirely and outputs zero
+            assets if there are zero recorded symbol usages in the application.
+        *   Perform offline verification by enabling the `local_build: true` user
+            define and testing compiler invocation with network disconnected.
+  resources:
+    - https://pub.dev/packages/code_assets
+    - https://pub.dev/packages/hooks
+    - https://pub.dev/packages/native_toolchain_c
+    - https://dart.dev/tools/native-assets
