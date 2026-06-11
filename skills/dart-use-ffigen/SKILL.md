@@ -121,12 +121,7 @@ Let's assume we are working with the SQLite package under `pkgs/code_assets/exam
 
 ### The C Header File (`third_party/sqlite/sqlite3.h`)
 ```c
-// The author disclaims copyright to this source code.  In place of
-// a legal notice, here is a blessing:
-//
-//    May you do good and not evil.
-//    May you find forgiveness for yourself and forgive others.
-//    May you share freely, never taking more than you give.
+// The author disclaims copyright to this source code.
 
 #ifndef SQLITE3_H_
 #define SQLITE3_H_
@@ -189,12 +184,6 @@ void main() {
       recordUseMapping: treeShakeMapping,
       format: true,
       preamble: '''
-// The author disclaims copyright to this source code.  In place of
-// a legal notice, here is a blessing:
-//
-//    May you do good and not evil.
-//    May you find forgiveness for yourself and forgive others.
-//    May you share freely, never taking more than you give.
 
 // AUTO-GENERATED FILE - DO NOT MODIFY.
 // Generated via ffigen.
