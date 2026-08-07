@@ -3,11 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
+import 'package:skills_lint/skills_lint.dart';
 import 'package:test/test.dart';
 
-const String _configFilePath = 'dart_skills_lint.yaml';
+const String _configFilePath = 'skills_lint.yaml';
 
 void main() {
   test('Run skills linter', () async {
