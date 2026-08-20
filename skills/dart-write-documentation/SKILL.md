@@ -1,5 +1,5 @@
 ---
-name: write-dart-docs
+name: dart-write-documentation
 description: "Rules and formatting guidelines for writing Dart /// API documentation and doc comments."
 ---
 
