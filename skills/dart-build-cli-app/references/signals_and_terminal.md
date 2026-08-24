@@ -21,9 +21,6 @@ Stream<ProcessSignal> watchTerminationSignals() {
   if (Platform.isWindows) {
     return ProcessSignal.sigint.watch();
   }
-  if (Platform.isFuchsia) {
-    return const Stream<Never>.empty();
-  }
   return StreamGroup.merge([
     ProcessSignal.sigint.watch(),
     ProcessSignal.sigterm.watch(),
@@ -44,14 +41,17 @@ If setting `stdin.echoMode = false` or `stdin.lineMode = false`, install a signa
 import 'dart:io';
 
 void enableInteractiveMode() {
+  // Defensive guard: only configure terminal modes if standard input is an interactive TTY.
   if (!stdin.hasTerminal) return;
   stdin.echoMode = false;
   stdin.lineMode = false;
 
-  // Ensure terminal state is restored on Ctrl+C
+  // Ensure terminal state is synchronously restored on Ctrl+C.
   final sub = ProcessSignal.sigint.watch().listen((_) {
     restoreTerminal();
-    exit(130); // Standard 128 + SIGINT exit code
+    // Exiting with 128 + SIGINT (2) = 130 is the standard POSIX protocol
+    // for asynchronous signal handlers to communicate signal interruption to the host shell.
+    exit(130);
   });
 
   try {
@@ -109,9 +109,11 @@ Future<void> safeWriteln(String line) async {
   try {
     stdout.writeln(line);
   } on SocketException catch (e) {
-    // EPIPE / Broken pipe: downstream closed standard input; terminate cleanly.
+    // EPIPE / Broken pipe: downstream closed standard input.
     if (e.osError?.errorCode == 32 || e.message.contains('Broken pipe')) {
       await stdout.close().catchError((_) {});
+      // In a bulk streaming context, calling exit(0) immediately stops the
+      // producer loop when downstream has closed its pipe.
       exit(0);
     }
     rethrow;

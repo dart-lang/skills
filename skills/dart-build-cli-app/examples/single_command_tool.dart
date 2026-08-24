@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:io/io.dart';
@@ -14,46 +14,53 @@ Future<void> main(List<String> args) async {
       'help',
       abbr: 'h',
       negatable: false,
-      help: 'Show this usage information.',
+      help: 'Show usage information.',
     )
     ..addFlag(
       'verbose',
       abbr: 'v',
       negatable: false,
-      help: 'Show detailed stack traces on failure.',
+      help: 'Show detailed stack traces on fatal error.',
     )
-    ..addOption('input', abbr: 'i', help: 'Path to input file.');
+    ..addOption(
+      'input',
+      abbr: 'i',
+      mandatory: true,
+      help: 'Path to the input file to process.',
+    );
 
   try {
     final results = parser.parse(args);
 
-    if (results['help'] as bool) {
-      io.stdout.writeln('Usage: single_tool [options]');
-      io.stdout.writeln(parser.usage);
-      io.exitCode = ExitCode.success.code;
+    if (results.flag('help')) {
+      // Explicit help requested by user: write usage to stdout.
+      stdout.writeln('Usage: tool [options]');
+      stdout.writeln(parser.usage);
+      exitCode = ExitCode.success.code;
       return;
     }
 
-    await runTool(results);
-    io.exitCode = ExitCode.success.code;
+    await _runTool(results);
+    exitCode = ExitCode.success.code;
   } on FormatException catch (e) {
-    // Parameter and parsing errors write to stderr along with usage help.
-    io.stderr.writeln('Error: ${e.message}');
-    io.stderr.writeln(parser.usage);
-    io.exitCode = ExitCode.usage.code;
+    // Argument parse error: write error message AND usage to stderr.
+    stderr.writeln('Error: ${e.message}');
+    stderr.writeln(parser.usage);
+    exitCode = ExitCode.usage.code;
   } catch (e, st) {
-    io.stderr.writeln('Fatal error: $e');
+    stderr.writeln('Fatal error: $e');
     if (args.contains('-v') || args.contains('--verbose')) {
-      io.stderr.writeln(Trace.from(st).terse);
+      stderr.writeln(Trace.from(st).terse);
     }
-    io.exitCode = ExitCode.software.code;
+    exitCode = ExitCode.software.code;
   }
 }
 
-Future<void> runTool(ArgResults results) async {
-  final input = results['input'] as String?;
-  if (input == null) {
-    throw const FormatException('Missing required option: --input');
-  }
-  io.stdout.writeln('Processing $input...');
+/// Encapsulates the tool's core business logic.
+///
+/// In production packages, this logic should live in `lib/src/` rather than
+/// directly in the `bin/` entrypoint to ensure fast in-memory unit testability.
+Future<void> _runTool(ArgResults args) async {
+  final inputPath = args.option('input')!;
+  stdout.writeln('Processing $inputPath...');
 }
