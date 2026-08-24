@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:io/io.dart';
+import 'package:io/io.dart'; // Standard POSIX ExitCode constants (ExitCode.usage, etc.)
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> main(List<String> args) async {

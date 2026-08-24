@@ -5,7 +5,6 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:io/io.dart';
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> main(List<String> args) async {
@@ -36,23 +35,23 @@ Future<void> main(List<String> args) async {
       // Explicit help requested by user: write usage to stdout.
       stdout.writeln('Usage: tool [options]');
       stdout.writeln(parser.usage);
-      exitCode = ExitCode.success.code;
+      exitCode = 0; // Standard POSIX success (EX_OK)
       return;
     }
 
     await _runTool(results);
-    exitCode = ExitCode.success.code;
+    exitCode = 0; // Standard POSIX success (EX_OK)
   } on FormatException catch (e) {
     // Argument parse error: write error message AND usage to stderr.
     stderr.writeln('Error: ${e.message}');
     stderr.writeln(parser.usage);
-    exitCode = ExitCode.usage.code;
+    exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
   } catch (e, st) {
     stderr.writeln('Fatal error: $e');
     if (args.contains('-v') || args.contains('--verbose')) {
       stderr.writeln(Trace.from(st).terse);
     }
-    exitCode = ExitCode.software.code;
+    exitCode = 70; // Standard POSIX internal software error (EX_SOFTWARE)
   }
 }
 
