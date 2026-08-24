@@ -1,0 +1,78 @@
+// Copyright (c) 2026, the Dart project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'dart:io' as io;
+
+import 'package:args/args.dart';
+import 'package:args/command_runner.dart';
+import 'package:io/io.dart';
+import 'package:stack_trace/stack_trace.dart';
+
+Future<void> main(List<String> args) async {
+  final runner = ToolCommandRunner();
+
+  try {
+    final status = await runner.run(args);
+    io.exitCode = status ?? ExitCode.success.code;
+  } on UsageException catch (e) {
+    // Usage errors (invalid flags/arguments) must write to stderr.
+    io.stderr.writeln(e.message);
+    io.stderr.writeln(e.usage);
+    io.exitCode = ExitCode.usage.code;
+  } catch (e, st) {
+    io.stderr.writeln('Fatal error: $e');
+    if (args.contains('-v') || args.contains('--verbose')) {
+      io.stderr.writeln(Trace.from(st).terse);
+    }
+    io.exitCode = ExitCode.software.code;
+  }
+}
+
+class ToolCommandRunner extends CommandRunner<int> {
+  ToolCommandRunner() : super('tool', 'Multi-command production CLI utility.') {
+    argParser
+      ..addFlag(
+        'verbose',
+        abbr: 'v',
+        negatable: false,
+        help: 'Show verbose stack traces on failure.',
+      )
+      ..addFlag('version', negatable: false, help: 'Print tool version.');
+
+    addCommand(ProcessCommand());
+  }
+
+  @override
+  Future<int?> runCommand(ArgResults topLevelResults) async {
+    if (topLevelResults['version'] as bool) {
+      io.stdout.writeln('tool version 1.0.0');
+      return ExitCode.success.code;
+    }
+    return super.runCommand(topLevelResults);
+  }
+}
+
+class ProcessCommand extends Command<int> {
+  @override
+  final String name = 'process';
+
+  @override
+  final String description = 'Process input files.';
+
+  ProcessCommand() {
+    argParser.addOption(
+      'input',
+      abbr: 'i',
+      mandatory: true,
+      help: 'Path to input file.',
+    );
+  }
+
+  @override
+  Future<int> run() async {
+    final input = argResults!['input'] as String;
+    io.stdout.writeln('Processing $input...');
+    return ExitCode.success.code;
+  }
+}
