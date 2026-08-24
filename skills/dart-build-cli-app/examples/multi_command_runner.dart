@@ -46,6 +46,7 @@ class ToolCommandRunner extends CommandRunner<int> {
   @override
   Future<int?> runCommand(ArgResults topLevelResults) async {
     if (topLevelResults['version'] as bool) {
+      // In production, reference packageVersion from generated lib/src/version.dart (via package:build_version).
       io.stdout.writeln('tool version 1.0.0');
       return ExitCode.success.code;
     }

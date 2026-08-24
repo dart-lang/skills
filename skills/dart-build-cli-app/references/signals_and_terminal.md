@@ -44,6 +44,7 @@ If setting `stdin.echoMode = false` or `stdin.lineMode = false`, install a signa
 import 'dart:io';
 
 void enableInteractiveMode() {
+  if (!stdin.hasTerminal) return;
   stdin.echoMode = false;
   stdin.lineMode = false;
 
@@ -74,10 +75,16 @@ If emitting ANSI escape code to hide the cursor (`\x1B[?25l`), always restore cu
 
 ```dart
 void showCursor() {
-  if (stdout.hasTerminal && stdout.supportsAnsiEscapes) {
+  if (useAnsi) {
     stdout.write('\x1B[?25h');
   }
 }
+
+/// Canonical ANSI support check respecting NO_COLOR standards.
+bool get useAnsi =>
+    stdout.hasTerminal &&
+    stdout.supportsAnsiEscapes &&
+    !Platform.environment.containsKey('NO_COLOR');
 ```
 
 ---
