@@ -32,10 +32,19 @@ Calling `dart:io`'s `exit(int code)` invokes `Platform::Exit(code)` in the C++ r
 
 **Rule**: Set `exitCode = code` or return an integer exit code from `CommandRunner<int>`. Allow the asynchronous `main()` function to return naturally.
 
+Standard POSIX exit codes (`/usr/include/sysexits.h`):
+* `0`: Success (`EX_OK` / `ExitCode.success.code`)
+* `64`: Command-line usage error (`EX_USAGE` / `ExitCode.usage.code`)
+* `65`: Data format error (`EX_DATAERR` / `ExitCode.data.code`)
+* `70`: Internal software crash (`EX_SOFTWARE` / `ExitCode.software.code`)
+* `78`: Configuration error (`EX_CONFIG` / `ExitCode.config.code`)
+
+*Note*: For simple single-file scripts, use explicit integer literals (`0`, `64`, `70`). For production multi-command packages, import `package:io/io.dart` and use `ExitCode` constants.
+
 ```dart
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:io/io.dart';
+import 'package:io/io.dart'; // Provides standard POSIX ExitCode constants
 
 Future<void> main(List<String> args) async {
   final runner = CommandRunner<int>('tool', 'CLI tool description.');
