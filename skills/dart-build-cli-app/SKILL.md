@@ -73,8 +73,13 @@ Future<void> flushThenExit(int status) async {
 * **Data vs. Diagnostics**: Write intended program results and machine-readable data exclusively to `stdout`. Write warnings, error messages, and debug logs exclusively to `stderr`.
 * **The Error Usage Rule**: When an argument parsing error occurs (`FormatException` or `UsageException`), **both the error message and the usage text must write to `stderr`**. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
 * **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `io.stderr.writeln()` for all failure notifications.
-* **Terminal Capability Detection**: Verify `stdout.hasTerminal` and `stdout.supportsAnsiEscapes` before emitting ANSI color or cursor escape codes.
-* **Respect `NO_COLOR`**: If `Platform.environment.containsKey('NO_COLOR')`, disable all ANSI styling (following https://no-color.org/).
+* **Terminal Capability Detection & `NO_COLOR`**: Verify `stdout.hasTerminal`, `stdout.supportsAnsiEscapes`, and `!Platform.environment.containsKey('NO_COLOR')` before emitting ANSI color or cursor escape codes:
+  ```dart
+  bool get useAnsi =>
+      stdout.hasTerminal &&
+      stdout.supportsAnsiEscapes &&
+      !Platform.environment.containsKey('NO_COLOR');
+  ```
 * **Machine-Readable Modes**: When `--json` or `--machine` flags are passed, format data as JSON to `stdout` and route logs to `stderr`.
 
 ---
