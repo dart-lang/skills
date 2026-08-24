@@ -84,7 +84,7 @@ The `{@example}` directive is a block-level directive. It must appear on its own
 
 *   **Package-Root Paths (`/`)**: Paths starting with a leading slash automatically resolve directly to the root of the Dart package. Use this when the destination file is deep.
     *   *Example:* `{@example /test/data/sample.txt}` exactly maps to `<package_root>/test/data/sample.txt`.
-*   **Relative Paths**: Paths without a leading slash resolve relative to the directory of the file containing the doc comment. 
+*   **Relative Paths**: Paths without a leading slash resolve relative to the directory of the file containing the doc comment.
     *   *Example:* `{@example ../utils/demo.dart}`
 *   **Boundary Enforcement:** Using `..` segments to traverse upward is perfectly acceptable, but dartdoc natively stops directory traversal at the package root (it will never escape the package).
 *   **No Network URLs:** Absolute URIs (e.g., starting with `https://`) are strictly not supported. The example file *must* sit natively somewhere in the local filesystem.
