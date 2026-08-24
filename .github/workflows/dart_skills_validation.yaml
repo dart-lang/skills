@@ -16,10 +16,6 @@ on:
   schedule:
     - cron: '0 0 * * 0' # weekly
 
-defaults:
-  run:
-    working-directory: repo_tool
-
 jobs:
   analyze_and_test:
     runs-on: ubuntu-latest
@@ -32,12 +28,14 @@ jobs:
 
     - name: Install dependencies
       run: dart pub get
+      working-directory: repo_tool
 
-    - name: Verify formatting
+    - name: Verify formatting across repository
       run: dart format --output=none --set-exit-if-changed .
 
-    - name: Analyze project source
-      run: dart analyze --fatal-infos
+    - name: Analyze project source and skills
+      run: dart analyze --fatal-infos --packages=repo_tool/.dart_tool/package_config.json repo_tool skills
 
     - name: Run tests
       run: dart test
+      working-directory: repo_tool
