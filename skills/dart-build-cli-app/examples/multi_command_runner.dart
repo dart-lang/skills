@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
@@ -14,18 +14,18 @@ Future<void> main(List<String> args) async {
 
   try {
     final status = await runner.run(args);
-    io.exitCode = status ?? ExitCode.success.code;
+    exitCode = status ?? ExitCode.success.code;
   } on UsageException catch (e) {
     // Usage errors (invalid flags/arguments) must write to stderr.
-    io.stderr.writeln(e.message);
-    io.stderr.writeln(e.usage);
-    io.exitCode = ExitCode.usage.code;
+    stderr.writeln(e.message);
+    stderr.writeln(e.usage);
+    exitCode = ExitCode.usage.code;
   } catch (e, st) {
-    io.stderr.writeln('Fatal error: $e');
+    stderr.writeln('Fatal error: $e');
     if (args.contains('-v') || args.contains('--verbose')) {
-      io.stderr.writeln(Trace.from(st).terse);
+      stderr.writeln(Trace.from(st).terse);
     }
-    io.exitCode = ExitCode.software.code;
+    exitCode = ExitCode.software.code;
   }
 }
 
@@ -45,9 +45,9 @@ class ToolCommandRunner extends CommandRunner<int> {
 
   @override
   Future<int?> runCommand(ArgResults topLevelResults) async {
-    if (topLevelResults['version'] as bool) {
+    if (topLevelResults.flag('version')) {
       // In production, reference packageVersion from generated lib/src/version.dart (via package:build_version).
-      io.stdout.writeln('tool version 1.0.0');
+      stdout.writeln('tool version 1.0.0');
       return ExitCode.success.code;
     }
     return super.runCommand(topLevelResults);
@@ -72,8 +72,8 @@ class ProcessCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    final input = argResults!['input'] as String;
-    io.stdout.writeln('Processing $input...');
+    final input = argResults!.option('input')!;
+    stdout.writeln('Processing $input...');
     return ExitCode.success.code;
   }
 }

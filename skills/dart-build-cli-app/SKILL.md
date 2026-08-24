@@ -15,7 +15,7 @@ description: >-
 * [6. Subprocess Spawning & AOT Resilience](#6-subprocess-spawning--aot-resilience)
 * [7. Signal Handling & Terminal Teardown](#7-signal-handling--terminal-teardown)
 * [8. Testing CLI Applications](#8-testing-cli-applications)
-* [9. Compilation & Distribution](#9-compilation--distribution)
+* [9. Modern Compilation & Distribution](#9-modern-compilation--distribution)
 * [10. Workflows & Audit Checklist](#10-workflows--audit-checklist)
 * [References & Examples](#references--examples)
 
@@ -30,10 +30,10 @@ Calling `dart:io`'s `exit(int code)` invokes `Platform::Exit(code)` in the C++ r
 * **Buffer Truncation**: `stdout` and `stderr` are buffered asynchronous `IOSink` streams. `exit()` drops unflushed bytes.
 * **Resource Leaks**: `finally` blocks (closing locks, deleting temp directories) are bypassed.
 
-**Rule**: Set `io.exitCode = code` or return an integer exit code from `CommandRunner<int>`. Allow the asynchronous `main()` function to return naturally.
+**Rule**: Set `exitCode = code` or return an integer exit code from `CommandRunner<int>`. Allow the asynchronous `main()` function to return naturally.
 
 ```dart
-import 'dart:io' as io;
+import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:io/io.dart';
 
@@ -41,14 +41,19 @@ Future<void> main(List<String> args) async {
   final runner = CommandRunner<int>('tool', 'CLI tool description.');
   try {
     final status = await runner.run(args);
-    io.exitCode = status ?? ExitCode.success.code;
+    exitCode = status ?? ExitCode.success.code;
   } on UsageException catch (e) {
-    io.stderr.writeln(e.message);
-    io.stderr.writeln(e.usage);
-    io.exitCode = ExitCode.usage.code;
+    stderr.writeln(e.message);
+    stderr.writeln(e.usage);
+    exitCode = ExitCode.usage.code;
   }
 }
 ```
+
+### The Thin Entrypoint Pattern (`bin/` vs. `lib/src/`)
+Keep `bin/*.dart` files strictly as minimal entrypoint trampolines (instantiate runner, pass `args`, await exit code). Place all command definitions, argument parsers, formatters, and business logic inside `lib/src/`.
+
+* **Rationale**: Code in `bin/` cannot be cleanly imported via `package:` URIs. Moving logic into `lib/src/` allows the entire command runner, subcommand hierarchy, and business logic to be unit-tested in-memory in milliseconds (`< 2ms`) without spawning OS subprocesses.
 
 ### Asynchronous Stream Drainage Before Fatal Exits (`flushThenExit`)
 If an unrecoverable exception is caught inside a callback where natural return is impossible, do not invoke bare `exit(code)`. Await closure of standard I/O sinks first:
@@ -72,7 +77,7 @@ Future<void> flushThenExit(int status) async {
 
 * **Data vs. Diagnostics**: Write intended program results and machine-readable data exclusively to `stdout`. Write warnings, error messages, and debug logs exclusively to `stderr`.
 * **The Error Usage Rule**: When an argument parsing error occurs (`FormatException` or `UsageException`), **both the error message and the usage text must write to `stderr`**. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
-* **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `io.stderr.writeln()` for all failure notifications.
+* **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `stderr.writeln()` for all failure notifications.
 * **Terminal Capability Detection & `NO_COLOR`**: Verify `stdout.hasTerminal`, `stdout.supportsAnsiEscapes`, and `!Platform.environment.containsKey('NO_COLOR')` before emitting ANSI color or cursor escape codes:
   ```dart
   bool get useAnsi =>
@@ -87,7 +92,7 @@ Future<void> flushThenExit(int status) async {
 ## 3. Project Configuration & Packaging
 
 ### Pubspec Entrypoint Mapping (`executables:`)
-Always declare executable entry points in `pubspec.yaml`. This enables clean invocation via `dart run <command>` (without specifying `bin/...dart`) and configures global binary symlinks for `pub global activate` and `dart install`:
+Always declare executable entry points in `pubspec.yaml`. This enables clean invocation via `dart run <command>` (without specifying `bin/...dart`) and configures global binary symlinks for `dart install`:
 
 ```yaml
 name: my_cli
@@ -113,6 +118,7 @@ Import `package:args` to manage command-line arguments:
 
 * **Simple Scripts**: Use `ArgParser` directly with `addFlag()` and `addOption()`.
 * **Multi-Command Tools**: Implement `CommandRunner<int>` and extend `Command<int>` for each subcommand, returning POSIX exit codes directly.
+* **Type-Safe Accessors**: Use `results.flag('name')`, `results.option('name')`, and `results.multiOption('name')` (available in `package:args` 2.5+) instead of map indexing `operator []` to eliminate manual type casts (`as bool`, `as String?`).
 * **Complex Options Models**: For applications with extensive flags, use `package:build_cli` to generate strongly-typed options classes. Leverage named default overrides (e.g. `{String? hostDefaultOverride}`) to cleanly merge configuration files with CLI flags.
 
 ---
@@ -123,20 +129,20 @@ Import `package:args` to manage command-line arguments:
 * **Sanitize with `Trace.from(st).terse`**: Use static utilities from `package:stack_trace` on uncaught errors without capturing zones:
 
 ```dart
-import 'dart:io' as io;
+import 'dart:io';
 import 'package:io/io.dart';
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> runMain(List<String> args) async {
   try {
     await executeLogic(args);
-    io.exitCode = ExitCode.success.code;
+    exitCode = ExitCode.success.code;
   } catch (e, st) {
-    io.stderr.writeln('Fatal error: $e');
+    stderr.writeln('Fatal error: $e');
     if (args.contains('-v') || args.contains('--verbose')) {
-      io.stderr.writeln(Trace.from(st).terse);
+      stderr.writeln(Trace.from(st).terse);
     }
-    io.exitCode = ExitCode.software.code;
+    exitCode = ExitCode.software.code;
   }
 }
 ```
@@ -158,7 +164,7 @@ When spawning Dart SDK subprocesses (e.g., `dart format`, `dart test`, `build_ru
 If your CLI alters terminal modes, displays spinners, or opens listening sockets:
 
 * **Windows Signal Guard**: On Windows, `ProcessSignal.sigterm.watch()` throws `UnsupportedError`. Guard `sigterm` with `if (!Platform.isWindows)`.
-* **Echo & Line Mode Teardown**: If setting `stdin.echoMode = false` or `stdin.lineMode = false`, install a `SIGINT` listener and `finally` block to restore them so user keystrokes remain visible after exit.
+* **Echo & Line Mode Teardown**: If setting `stdin.echoMode = false` or `stdin.lineMode = false`, check `if (!stdin.hasTerminal) return;` first, and install a `SIGINT` listener and `finally` block to restore them so user keystrokes remain visible after exit.
 * **Cursor Visibility**: If emitting ANSI hide-cursor (`\x1B[?25l`), always restore cursor visibility (`\x1B[?25h`) on exit or cancellation.
 * **Socket Cleanup**: Explicitly close listening `HttpServer` or `ServerSocket` instances (`server.close(force: true)`) on termination signals to immediately release OS ports.
 * See detailed patterns in [references/signals_and_terminal.md](references/signals_and_terminal.md).
@@ -167,7 +173,10 @@ If your CLI alters terminal modes, displays spinners, or opens listening sockets
 
 ## 8. Testing CLI Applications
 
-Use `package:test_process` and `package:test_descriptor` to write high-fidelity integration tests:
+Structure testing across two distinct layers:
+
+1. **Unit Tests (In-Memory, `< 5ms`)**: Test command classes, option parsing, and business logic directly by importing `package:<pkg>/src/...` in `test/`.
+2. **Integration Tests (Subprocesses)**: Use `package:test_process` and `package:test_descriptor` to verify end-to-end binary execution, process I/O streaming, and OS exit codes:
 
 ```dart
 import 'package:test/test.dart';
@@ -193,13 +202,15 @@ void main() {
 
 ---
 
-## 9. Compilation & Distribution
+## 9. Modern Compilation & Distribution
 
-* **Local Development**: Use `dart run bin/cli.dart` for fast JIT incremental iterations.
+Dart 3.12+ standardizes CLI distribution around `dart run` and `dart install` (moving away from `dart pub global activate`):
+
+* **Ephemeral Execution (JIT)**: `dart run <package>@<version> [args]` downloads and runs the CLI on demand.
+* **Global Installation (Native AOT)**: `dart install <package>` compiles the package entrypoint to a fast native standalone binary in `~/.dart/install/bin/`.
+* **Local Development**: Use `dart run <command>` (resolves via `executables:` in `pubspec.yaml`) or `dart run bin/cli.dart`.
 * **Bundling Dynamic Libraries & Code Assets**: Use `dart build cli`. Outputs bundle to `build/cli/_/bundle/`.
-* **Standalone Native Executable**: Use `dart compile exe bin/cli.dart -o <output_path>`.
-* **Cross-Compilation (Linux Only)**:
-  `dart compile exe --target-os=linux --target-arch=arm64 bin/cli.dart -o build/cli-linux-arm64`
+* **Standalone Executable Compilation**: Use `dart compile exe bin/cli.dart -o <output_path>`.
 
 ---
 
@@ -207,12 +218,13 @@ void main() {
 
 ### Implementation Workflow
 - [ ] Declare entry points in `pubspec.yaml` under `executables:`.
-- [ ] Structure entrypoint in `bin/` using `CommandRunner<int>` or `ArgParser`.
-- [ ] Return integer exit codes or set `io.exitCode = N`; avoid raw `exit(N)`.
-- [ ] Direct errors, warnings, and usage on parse failure to `io.stderr`.
-- [ ] Validate `stdout.hasTerminal` and check `NO_COLOR` before emitting ANSI codes.
+- [ ] Keep `bin/*.dart` as a thin entrypoint; place command logic in `lib/src/`.
+- [ ] Return integer exit codes or set `exitCode = N`; avoid raw `exit(N)`.
+- [ ] Direct errors, warnings, and usage on parse failure to `stderr`.
+- [ ] Use `results.flag()`, `results.option()`, and `results.multiOption()` for type safety.
+- [ ] Validate `useAnsi` (checking `stdout.hasTerminal`, `supportsAnsiEscapes`, and `NO_COLOR`) before emitting ANSI codes.
 - [ ] Spawn child tools using `cli_util.dartExecutable`, never `Platform.resolvedExecutable`.
-- [ ] Add integration tests using `test_process` and `test_descriptor`.
+- [ ] Unit-test command runners in-memory; test end-to-end binary execution with `test_process`.
 
 ---
 
