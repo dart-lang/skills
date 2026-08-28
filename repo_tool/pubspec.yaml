@@ -11,9 +11,5 @@ dependencies:
 dev_dependencies:
   lints: ^6.0.0
   logging: ^1.2.0
-  skills_lint:
-    git:
-      url: https://github.com/google/skills_lint.dart.git
-      path: packages/skills_lint
-      ref: main
+  skills_lint: ^0.5.1
   test: ^1.25.6
