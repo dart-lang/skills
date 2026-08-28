@@ -10,10 +10,6 @@ dependencies:
 
 dev_dependencies:
   lints: ^6.0.0
-  test: ^1.25.6
   logging: ^1.2.0
-  dart_skills_lint:
-    git:
-      url: https://github.com/flutter/skills.git
-      path: tool/dart_skills_lint
-      ref: 3d375fed1b5f6bfe2881a601a4b6d91588594ff6
+  skills_lint: ^0.5.1
+  test: ^1.25.6
