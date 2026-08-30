@@ -1,9 +1,16 @@
 ---
 name: dart-use-pattern-matching
-description: Use switch expressions and pattern matching where appropriate
+description: >-
+  Applies Dart 3 pattern matching, switch expressions, and destructuring
+  idiomatically to validate data schemas, handle algebraic data types, and
+  decompose control flow. Use when refactoring complex if-else chains,
+  parsing polymorphic JSON or API responses, destructuring Records or Maps, or
+  enforcing exhaustiveness on sealed classes. Don't use for simple boolean
+  conditions, single-variable type promotion (use `is`), or basic collection
+  filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Sun, 30 Aug 2026 05:08:00 GMT
+  last_modified: Sun, 30 Aug 2026 05:36:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -192,7 +199,10 @@ ApiResponse parseApiResponse(Map<String, dynamic> json) => switch (json) {
 ```
 
 ### Nested JSON Validation and Optional Fields
-Use nested Map and List patterns to validate schema structure, extract collections, and handle optional/nullable fields in a single step:
+Use nested Map and List patterns to validate required schema structure and extract collections in a single step.
+
+> [!NOTE]
+> Map patterns check for key existence (`containsKey`). If an optional JSON key might be omitted entirely from the payload (rather than explicitly passed as `'key': null`), destructure required keys via the pattern and extract optional fields directly from the matched submap:
 
 ```dart
 void processUserPayload(Map<String, dynamic> json) {
@@ -201,11 +211,12 @@ void processUserPayload(Map<String, dynamic> json) {
     'profile': {
       'name': String name,
       'email': String email,
-      'avatarUrl': String? avatarUrl, // Nullable / optional field
-    },
-    'tags': [String primaryTag, ...],  // Matches at least 1 element, ignores rest
+    } && final Map<String, dynamic> profile,
+    'tags': [String primaryTag, ...], // Matches at least 1 element, ignores rest
   }) {
-    print('User $name ($id, $email) - Primary tag: $primaryTag');
+    // Read optional/omitted fields directly from the validated submap
+    final avatarUrl = profile['avatarUrl'] as String?;
+    print('User $name ($id, $email, avatar: $avatarUrl) - Primary tag: $primaryTag');
   } else {
     throw FormatException('Malformed user payload structure: $json');
   }
@@ -251,11 +262,9 @@ Use `when` to evaluate arbitrary conditions after a pattern matches.
 
 ```dart
 switch (shape) {
-  case Square(size: var s) || Circle(size: var s) when s > 0:
-    print('Valid symmetric shape with size $s');
+  case Square(length: var s) || Circle(radius: var s) when s > 0:
+    print('Valid positive shape with dimension $s');
   case Square() || Circle():
-    print('Invalid or empty shape');
-  default:
-    print('Unknown shape');
+    print('Zero or negative dimension shape');
 }
 ```
