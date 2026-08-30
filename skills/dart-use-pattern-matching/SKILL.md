@@ -3,7 +3,7 @@ name: dart-use-pattern-matching
 description: Use switch expressions and pattern matching where appropriate
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Fri, 24 Apr 2026 15:08:55 GMT
+  last_modified: Sun, 30 Aug 2026 05:08:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -11,6 +11,7 @@ metadata:
 - [Pattern Selection Strategy](#pattern-selection-strategy)
 - [Switch Statements vs. Expressions](#switch-statements-vs-expressions)
 - [Core Pattern Implementations](#core-pattern-implementations)
+- [Pragmatic Balance & Anti-Patterns](#pragmatic-balance--anti-patterns)
 - [Workflows](#workflows)
 - [Examples](#examples)
 
@@ -18,10 +19,11 @@ metadata:
 
 Apply specific pattern types based on the data structure and desired outcome. Follow these conditional guidelines:
 
-*   **If validating and extracting from deserialized data (e.g., JSON):** Use Map and List patterns to simultaneously check structure and destructure key-value pairs.
+*   **If validating and extracting from deserialized data (e.g., JSON):** Use Map, List, and Object patterns to validate schema structure and destructure properties in a single step.
+*   **If handling polymorphic payloads or responses:** Use `switch` expressions over map discriminant keys to deserialize into `sealed` class hierarchies.
 *   **If handling multiple return values:** Use Record patterns to destructure fields directly into local variables.
 *   **If executing type-specific behavior (Algebraic Data Types):** Use Object patterns combined with `sealed` classes to ensure exhaustiveness.
-*   **If matching numeric ranges or conditions:** Use Relational (`>=`, `<=`) and Logical-and (`&&`) patterns.
+*   **If matching numeric ranges or conditions:** Use Relational (`>=`, `<=`) and Logical-and (`&&`) patterns within switch arms.
 *   **If multiple cases share logic:** Use Logical-or (`||`) patterns to share a single case body or guard clause.
 *   **If ignoring specific values:** Use the Wildcard pattern (`_`) or a non-matching Rest element (`...`) in collections.
 
@@ -53,6 +55,86 @@ Implement patterns using the following syntax and rules:
 *   **Record:** `(pattern1, named: pattern2)`. Matches records of the exact shape. Use `:var name` to infer the getter name.
 *   **Object:** `ClassName(field: pattern)`. Matches instances of `ClassName`. Use `:var field` to infer the getter name.
 
+## Pragmatic Balance & Anti-Patterns
+
+Pattern matching and switch expressions should simplify code, not add syntactic overhead. Observe the following boundaries:
+
+### 1. Prefer `is` Type Promotion over `if-case` for Single Promotable Variables
+When checking or promoting a single variable, use standard `is` checks instead of `if-case` patterns that introduce shadow aliases.
+
+*   **Avoid:**
+    ```dart
+    // ❌ Anti-pattern: Introduces unnecessary alias variable `k`
+    for (final MapEntry(:key, :value) in map.entries) {
+      if (key case final String k when value != null) {
+        process(k, value);
+      }
+    }
+    ```
+*   **Prefer:**
+    ```dart
+    // ✅ Promotes `key` directly in-place without extra variables
+    for (final MapEntry(:key, :value) in map.entries) {
+      if (key is String && value != null) {
+        process(key, value);
+      }
+    }
+    ```
+
+### 2. Consolidate Nullable Types in Switch Arms
+When mapping or returning values where both `null` and a type `T` are valid and handled identically, match the nullable type `T?` directly rather than creating redundant `null` arms.
+
+*   **Avoid:**
+    ```dart
+    // ❌ Redundant separate null arm
+    switch (value) {
+      final String s => s,
+      null => null,
+      _ => throw FormatException('Invalid value: $value'),
+    }
+    ```
+*   **Prefer:**
+    ```dart
+    // ✅ Clean nullable pattern match
+    switch (value) {
+      final String? s => s,
+      _ => throw FormatException('Invalid value: $value'),
+    }
+    ```
+
+### 3. Preserve Fast-Fail Validation (Do Not Silently Drop Data)
+Do not use `if-case` in loops or deserialization to filter elements if malformed data should trigger an error or diagnostic warning.
+
+*   **Avoid:**
+    ```dart
+    // ❌ Silently ignores malformed items
+    for (final raw in rawTasks) {
+      if (raw case final Map<String, dynamic> taskMap) {
+        _applyTask(taskMap);
+      }
+    }
+    ```
+*   **Prefer:**
+    ```dart
+    // ✅ Fast-fail with explicit diagnostic error
+    for (final raw in rawTasks) {
+      if (raw is! Map<String, dynamic>) {
+        throw FormatException('Expected Map item, got ${raw.runtimeType}: $raw');
+      }
+      _applyTask(raw);
+    }
+    ```
+
+### 4. Avoid Single-Case or Boolean Switches
+*   Use `if (x is T)` instead of a `switch` statement with only 1 case and `default: break;`.
+*   Use standard conditional ternary operators (`condition ? a : b`) instead of `switch (condition) { true => a, false => b }`.
+
+### 5. Avoid Gratuitous Object Destructuring
+Use standard property access (`user.name`) rather than object pattern destructuring (`final User(:name) = user;`) when reading a single property on a known non-null instance.
+
+### 6. Avoid `if-case` for Standalone Scalar Comparisons
+Use standard boolean operators (`if (code >= 200 && code < 300)`) instead of `if (code case >= 200 && < 300)` for standalone conditions. Reserve relational patterns for multi-arm `switch` tables.
+
 ## Workflows
 
 ### Task Progress: Implementing Pattern Matching
@@ -75,29 +157,55 @@ When switching over `sealed` classes or enums, you must ensure all subtypes are 
 
 ## Examples
 
-### JSON Validation and Destructuring
-Use Map and List patterns to validate structure and extract data in a single step.
+### Polymorphic JSON Deserialization (Discriminated Unions)
+Use Map patterns with switch expressions to validate tagged JSON payloads and construct `sealed` class hierarchies:
 
-**Input:**
 ```dart
-var data = {
-  'user': ['Lily', 13],
+sealed class ApiResponse {}
+
+class SuccessResponse implements ApiResponse {
+  final Map<String, dynamic> data;
+  SuccessResponse(this.data);
+}
+
+class ErrorResponse implements ApiResponse {
+  final String message;
+  final int code;
+  ErrorResponse(this.message, this.code);
+}
+
+ApiResponse parseApiResponse(Map<String, dynamic> json) => switch (json) {
+  {'status': 'ok', 'data': Map<String, dynamic> data} => SuccessResponse(data),
+  {'status': 'error', 'message': String msg, 'code': int code} =>
+    ErrorResponse(msg, code),
+  _ => throw FormatException('Invalid or unrecognized API response: $json'),
 };
 ```
 
-**Implementation:**
+### Nested JSON Validation and Optional Fields
+Use nested Map and List patterns to validate schema structure, extract collections, and handle optional/nullable fields in a single step:
+
 ```dart
-if (data case {'user': [String name, int age]}) {
-  print('User $name is $age years old.');
-} else {
-  print('Invalid JSON structure.');
+void processUserPayload(Map<String, dynamic> json) {
+  if (json case {
+    'id': String id,
+    'profile': {
+      'name': String name,
+      'email': String email,
+      'avatarUrl': String? avatarUrl, // Nullable / optional field
+    },
+    'tags': [String primaryTag, ...],  // Matches at least 1 element, ignores rest
+  }) {
+    print('User $name ($id, $email) - Primary tag: $primaryTag');
+  } else {
+    throw FormatException('Malformed user payload structure: $json');
+  }
 }
 ```
 
 ### Algebraic Data Types (Sealed Classes)
 Use Object patterns with switch expressions to handle family types exhaustively.
 
-**Implementation:**
 ```dart
 sealed class Shape {}
 
@@ -121,7 +229,6 @@ double calculateArea(Shape shape) => switch (shape) {
 ### Variable Swapping and Destructuring
 Use variable assignment patterns to swap values or extract record fields without temporary variables.
 
-**Implementation:**
 ```dart
 var (a, b) = ('left', 'right');
 (b, a) = (a, b); // Swap values
@@ -133,7 +240,6 @@ var (name, age) = getUserInfo();
 ### Guard Clauses and Logical-or
 Use `when` to evaluate arbitrary conditions after a pattern matches.
 
-**Implementation:**
 ```dart
 switch (shape) {
   case Square(size: var s) || Circle(size: var s) when s > 0:
