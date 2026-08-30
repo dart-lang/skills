@@ -146,14 +146,23 @@ Copy this checklist to track progress when implementing complex pattern matching
 - [ ] Extract required data using Variable patterns (`var x`, `:var y`).
 - [ ] Apply Guard clauses (`when condition`) for logic that cannot be expressed via patterns.
 - [ ] Handle unmatched cases using a Wildcard (`_`) or `default` clause (if not using a sealed class).
-- [ ] Run exhaustiveness validator.
+- [ ] Run static analyzer for exhaustiveness and dead code (`dart analyze`).
+- [ ] Write unit tests verifying both happy paths and malformed/error edge cases (`dart test`).
 
-### Feedback Loop: Exhaustiveness Checking
-When switching over `sealed` classes or enums, you must ensure all subtypes are handled.
+### Feedback Loop 1: Exhaustiveness Checking (Static Verification)
+When switching over `sealed` classes or enums, ensure all subtypes are handled at compile time:
 
-1. **Run validator:** Execute `dart analyze`.
-2. **Review errors:** Look for "The type 'X' is not exhaustively matched by the switch cases" errors.
-3. **Fix:** Add the missing Object patterns for the unhandled subtypes, or add a Wildcard (`_`) case if a default fallback is acceptable.
+1. **Run analyzer:** Execute `dart analyze`.
+2. **Review errors:** Look for "The type 'X' is not exhaustively matched by the switch cases" or unreachable pattern arm warnings.
+3. **Fix:** Add the missing Object patterns for unhandled subtypes, or add an explicit wildcard (`_`) arm if a default fallback or error is acceptable.
+
+### Feedback Loop 2: Runtime Edge Case & Fast-Fail Verification (Empirical Testing)
+When implementing deserialization or complex multi-case switches, verify runtime behavior across edge cases:
+
+1. **Test Happy Path**: Assert that valid structures match and bind variables correctly.
+2. **Test Optional / Nullable Variants**: Verify that payloads with missing or `null` optional fields do not fail matching.
+3. **Test Fast-Fail & Malformed Inputs**: Verify that unexpected types or missing required fields throw descriptive `FormatException`s rather than unhandled `StateError` or silent data drops.
+4. **Run test suite**: Execute `dart test` to confirm all validation paths and error handling behave as expected.
 
 ## Examples
 
