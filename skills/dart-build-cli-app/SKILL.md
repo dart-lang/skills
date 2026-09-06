@@ -30,7 +30,7 @@ Calling `dart:io`'s `exit(int code)` invokes `Platform::Exit(code)` in the C++ r
 * **Buffer Truncation**: `stdout` and `stderr` are buffered asynchronous `IOSink` streams. `exit()` drops unflushed bytes.
 * **Resource Leaks**: `finally` blocks (closing locks, deleting temp directories) are bypassed.
 
-**Rule**: Set `exitCode = code` or return an integer exit code from `CommandRunner<int>`. Allow the asynchronous `main()` function to return naturally.
+**Rule**: Avoid calling `exit(code)` directly during normal execution; set `exitCode = code` or return an integer exit code from `CommandRunner<int>` (from `package:args`) and allow the asynchronous `main()` function to return naturally. Reserve `exit(code)` strictly for unrecoverable fatal callbacks after flushing streams.
 
 Standard POSIX exit codes (`/usr/include/sysexits.h`):
 * `0`: Success (`EX_OK` / `ExitCode.success.code`)
@@ -86,7 +86,7 @@ Future<void> flushThenExit(int status) async {
 
 * **Data vs. Diagnostics**: Write intended program results and machine-readable data exclusively to `stdout`. Write warnings, error messages, and debug logs exclusively to `stderr`.
 * **The Error Usage Rule**: When an argument parsing error occurs (`FormatException` or `UsageException`), **both the error message and the usage text must write to `stderr`**. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
-* **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `stderr.writeln()` for all failure notifications.
+* **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `stderr.writeln()` for all failure notifications. For standard output, prefer `stdout.writeln()` over `print()` to comply with the [`avoid_print`](https://dart.dev/tools/linter-rules/avoid_print) lint rule (unless `analysis_options.yaml` explicitly configures `avoid_print: false`).
 * **Terminal Capability Detection & `NO_COLOR`**: Verify `stdout.hasTerminal`, `stdout.supportsAnsiEscapes`, and `!Platform.environment.containsKey('NO_COLOR')` before emitting ANSI color or cursor escape codes:
   ```dart
   bool get useAnsi =>
@@ -100,8 +100,8 @@ Future<void> flushThenExit(int status) async {
 
 ## 3. Project Configuration & Packaging
 
-### Pubspec Entrypoint Mapping (`executables:`)
-Always declare executable entry points in `pubspec.yaml`. This enables clean invocation via `dart run <command>` (without specifying `bin/...dart`) and configures global binary symlinks for `dart install`:
+### Scaffolding & Pubspec Entrypoint Mapping (`executables:`)
+Scaffold new command-line projects using `dart create -t console <package_name>`, which initializes the standard `bin/` and `lib/` layout. Always declare executable entry points in `pubspec.yaml` under `executables:` to enable clean invocation via `dart run <command>` (without specifying `bin/...dart`) and configure global binary symlinks for `dart install`:
 
 ```yaml
 name: my_cli
@@ -163,8 +163,8 @@ Future<void> runMain(List<String> args) async {
 When spawning Dart SDK subprocesses (e.g., `dart format`, `dart test`, `build_runner`):
 
 * **Never spawn `Platform.resolvedExecutable` or `Platform.executable`**: In AOT-compiled binaries (`dart install` / `dart compile exe`), `resolvedExecutable` points to the compiled application binary itself, causing recursive self-invocation loops or flag rejection crashes.
-* **Depend on `package:cli_util` (>= 0.6.0)**: Use the memoized nullable getter `cli_util.dartExecutable` or `cli_util.sdkPath`, which executes a robust 4-tier probe (`resolvedExecutable` -> `DART_SDK` env -> system `PATH` -> `FLUTTER_ROOT`).
-* See detailed technical guide in [references/aot_sdk_discovery.md](references/aot_sdk_discovery.md).
+* **Use `package:cli_util`**: Resolve the Dart SDK executable using `cli_util.dartExecutable` or `cli_util.sdkPath` instead of writing custom PATH or directory scrapers.
+* See version requirements and detailed technical guide in [references/aot_sdk_discovery.md](references/aot_sdk_discovery.md).
 
 ---
 

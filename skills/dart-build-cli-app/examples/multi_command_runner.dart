@@ -2,11 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+/// Example template for a production multi-command Dart CLI application.
+///
+/// Demonstrates structured subcommands using `CommandRunner<int>`, standard POSIX
+/// exit code constants from `package:io`, and proper `stderr` usage formatting.
+library;
+
 import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:io/io.dart'; // Standard POSIX ExitCode constants (ExitCode.usage, etc.)
+import 'package:io/io.dart';
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> main(List<String> args) async {
