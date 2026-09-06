@@ -152,6 +152,7 @@ void main(List<String> args) {
 ### Example: Integration Testing with Subprocesses
 
 ```dart
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -166,7 +167,7 @@ void main() {
     // 2. Spawn the CLI process
     final process = await TestProcess.start(
       'dart',
-      ['run', 'bin/cli.dart', 'process', '--path', '${d.sandbox}/project']
+      ['run', 'bin/cli.dart', 'process', '--path', p.join(d.sandbox, 'project')]
     );
 
     // 3. Validate stdout stream
