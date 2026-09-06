@@ -10,7 +10,7 @@ description: >-
   filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Sun, 30 Aug 2026 05:36:00 GMT
+  last_modified: Sun, 06 Sep 2026 06:43:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -69,15 +69,6 @@ Pattern matching and switch expressions should simplify code, not add syntactic 
 ### 1. Prefer `is` Type Promotion over `if-case` for Single Promotable Variables
 When checking or promoting a single variable, use standard `is` checks instead of `if-case` patterns that introduce shadow aliases.
 
-*   **Avoid:**
-    ```dart
-    // ❌ Anti-pattern: Introduces unnecessary alias variable `k`
-    for (final MapEntry(:key, :value) in map.entries) {
-      if (key case final String k when value != null) {
-        process(k, value);
-      }
-    }
-    ```
 *   **Prefer:**
     ```dart
     // ✅ Promotes `key` directly in-place without extra variables
@@ -87,10 +78,27 @@ When checking or promoting a single variable, use standard `is` checks instead o
       }
     }
     ```
+*   **Avoid:**
+    ```dart
+    // ❌ Anti-pattern: Introduces unnecessary alias variable `k`
+    for (final MapEntry(:key, :value) in map.entries) {
+      if (key case final String k when value != null) {
+        process(k, value);
+      }
+    }
+    ```
 
 ### 2. Consolidate Nullable Types in Switch Arms
 When mapping or returning values where both `null` and a type `T` are valid and handled identically, match the nullable type `T?` directly rather than creating redundant `null` arms.
 
+*   **Prefer:**
+    ```dart
+    // ✅ Clean nullable pattern match
+    switch (value) {
+      final String? s => s,
+      _ => throw FormatException('Invalid value: $value'),
+    }
+    ```
 *   **Avoid:**
     ```dart
     // ❌ Redundant separate null arm
@@ -100,27 +108,10 @@ When mapping or returning values where both `null` and a type `T` are valid and 
       _ => throw FormatException('Invalid value: $value'),
     }
     ```
-*   **Prefer:**
-    ```dart
-    // ✅ Clean nullable pattern match
-    switch (value) {
-      final String? s => s,
-      _ => throw FormatException('Invalid value: $value'),
-    }
-    ```
 
 ### 3. Preserve Fast-Fail Validation (Do Not Silently Drop Data)
 Do not use `if-case` in loops or deserialization to filter elements if malformed data should trigger an error or diagnostic warning.
 
-*   **Avoid:**
-    ```dart
-    // ❌ Silently ignores malformed items
-    for (final raw in rawTasks) {
-      if (raw case final Map<String, dynamic> taskMap) {
-        _applyTask(taskMap);
-      }
-    }
-    ```
 *   **Prefer:**
     ```dart
     // ✅ Fast-fail with explicit diagnostic error
@@ -129,6 +120,15 @@ Do not use `if-case` in loops or deserialization to filter elements if malformed
         throw FormatException('Expected Map item, got ${raw.runtimeType}: $raw');
       }
       _applyTask(raw);
+    }
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ Silently ignores malformed items
+    for (final raw in rawTasks) {
+      if (raw case final Map<String, dynamic> taskMap) {
+        _applyTask(taskMap);
+      }
     }
     ```
 
@@ -154,22 +154,13 @@ Copy this checklist to track progress when implementing complex pattern matching
 - [ ] Apply Guard clauses (`when condition`) for logic that cannot be expressed via patterns.
 - [ ] Handle unmatched cases using a Wildcard (`_`) or `default` clause (if not using a sealed class).
 - [ ] Run static analyzer for exhaustiveness and dead code (`dart analyze`).
-- [ ] Write unit tests verifying both happy paths and malformed/error edge cases (`dart test`).
 
-### Feedback Loop 1: Exhaustiveness Checking (Static Verification)
+### Feedback Loop: Exhaustiveness Checking
 When switching over `sealed` classes or enums, ensure all subtypes are handled at compile time:
 
 1. **Run analyzer:** Execute `dart analyze`.
 2. **Review errors:** Look for "The type 'X' is not exhaustively matched by the switch cases" or unreachable pattern arm warnings.
 3. **Fix:** Add the missing Object patterns for unhandled subtypes, or add an explicit wildcard (`_`) arm if a default fallback or error is acceptable.
-
-### Feedback Loop 2: Runtime Edge Case & Fast-Fail Verification (Empirical Testing)
-When implementing deserialization or complex multi-case switches, verify runtime behavior across edge cases:
-
-1. **Test Happy Path**: Assert that valid structures match and bind variables correctly.
-2. **Test Optional / Nullable Variants**: Verify that payloads with missing or `null` optional fields do not fail matching.
-3. **Test Fast-Fail & Malformed Inputs**: Verify that unexpected types or missing required fields throw descriptive `FormatException`s rather than unhandled `StateError` or silent data drops.
-4. **Run test suite**: Execute `dart test` to confirm all validation paths and error handling behave as expected.
 
 ## Examples
 
