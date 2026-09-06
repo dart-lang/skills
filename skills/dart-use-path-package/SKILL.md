@@ -22,12 +22,17 @@ metadata:
 
 ## 1. Core Principles & Cross-Platform Rules
 
-### Never Treat File Paths as Raw Strings
+### 1. Never Treat File Paths as Raw Strings
 * Native file paths on Windows use backslashes (`\`), whereas macOS and Linux use forward slashes (`/`).
 * String operations like `.contains('foo/')`, `.startsWith('foo/')`, or `.split('/')` silently fail on Windows native paths.
 * String interpolation like `'$dir/$file'` injects forward slashes on Windows and produces duplicate slashes (`//`) when `$dir` ends with a trailing slash.
 
 **Rule**: Always decompose paths into segments using `p.split(path)` before inspecting directory hierarchy or segment names, and always join path components using `p.join(...)`.
+
+### Pragmatic Boundary Joining vs. Multi-Segment Decomposition (`p.join`)
+* **Cross-Platform Libraries (Windows + POSIX)**: Pass individual path segments to `p.join(dir, 'sub', 'file.json')` so `package:path` inserts OS-native separators (`\` on Windows, `/` on POSIX) between every component.
+* **POSIX-Only Tools & Static Subpath Greppability**: In codebases exclusively targeting Linux/macOS (or when joining a dynamic base path to a known static subpath), decomposing 5–6 static segments into separate arguments (`p.join(home, '.local', 'share', 'app', 'bin', 'config.json')`) causes `dart format` to wrap across 6–8 vertical lines and **destroys substring greppability** (`grep` / `code_search` for `.local/share/app/bin`).
+* **Rule for POSIX Targets**: Prefer **2-argument boundary joining** (`p.join(home, '.local/share/app/bin/config.json')`). This prevents duplicate-slash bugs (`//`) at variable boundaries while preserving single-line readability and exact string searchability.
 
 ### Normalization vs. Canonicalization (`p.normalize` vs. `p.canonicalize`)
 * `p.normalize(path)` resolves `.` and `..` segments purely lexically without consulting the filesystem or standardizing case.

@@ -417,6 +417,8 @@
 
     2.  **Join Path Components Safely:**
         *   Replace string interpolation (`'$dir/$file'`) with `p.join(dir, file)` to prevent mixed separators and duplicate slashes (`//`).
+        *   In cross-platform code (Windows + POSIX), pass individual segments (`p.join(dir, 'sub', 'file.json')`).
+        *   In POSIX-only tools (Linux/macOS), prefer 2-argument boundary joining for static subpaths (`p.join(home, '.local/share/app/config.json')`) to preserve single-line formatting and substring greppability (`grep` / `code_search`).
 
     3.  **Bridge OS-Native Paths to POSIX or URL Contexts:**
         *   Never use `.replaceAll('\\', '/')` or `.replaceAll(r'\', '/')` to convert native paths to POSIX or web URLs.
