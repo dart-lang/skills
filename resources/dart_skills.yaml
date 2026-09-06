@@ -128,69 +128,57 @@
     - https://dart.dev/tools/dart-tool
     - https://dart.dev/tools/linter-rules
 - name: dart-build-cli-app
-  description: Entrypoint structure, exit codes, cross-platform scripts. Use
-    when building command line utilities, scripts, or applications.
-  examplePrompt: "Create a basic CLI app structure with argument parsing"
+  description: >-
+    Architectural patterns, entrypoint structure, exit codes, stream routing,
+    and subprocess spawning for Dart command-line interface (CLI) applications.
+  examplePrompt: "Create a production CLI app structure with CommandRunner and clean exit codes"
   instructions: |
-    **1. Project Creation and Setup:**
-    *   Begin by creating a new Dart project using the `dart create` command.
-    *   By default, `dart create` generates a console application, but you can specify the `cli` template using `dart create -t cli my_cli` for a CLI application with basic argument parsing.
-    *   This command creates a directory for your project and fetches package dependencies unless the `--no-pub` flag is used.
-    *   The generated project will have a `bin/cli.dart` file, which serves as the entry point for your application, containing the `main` function where program execution begins.
-    *   The `bin/` directory is where your executable code resides.
-    *   For web packages, entrypoint code (Dart scripts with `main()`, CSS, HTML) goes under `web/`, while library code goes under `lib/`. If a library isn't directly imported by web code or another package, it should be placed under `lib/src`.
+    **1. Process Lifecycle & Clean Exits (Avoid bare `exit(N)`):**
+    *   Avoid calling `exit(code)` directly during normal execution; it halts the OS process via C++ `Platform::Exit()`, destroying VM Service pause-on-exit debugging, breaking `package:coverage` collection RPCs, and dropping unflushed `stdout`/`stderr` buffers.
+    *   Set `io.exitCode = code` or return an integer exit code from `CommandRunner<int>` (from `package:args`). Allow asynchronous `main()` to return naturally.
+    *   Reserve `exit(code)` strictly for unrecoverable fatal callbacks where returning is impossible, awaiting `Future.wait([stdout.close(), stderr.close()])` first.
 
-    **2. Developing the Application:**
-    *   Modify the `bin/cli.dart` file to implement your application's logic.
-    *   Dart programs start execution from their `main` function.
-    *   You can organize your code into packages and libraries.
-    *   For example, you might import a `command_runner` package to handle argument parsing and command execution.
-    *   Error handling can be implemented using `try-catch` blocks, and the `rethrow` keyword can be used to partially handle an exception while allowing it to propagate. A `finally` clause ensures code runs regardless of whether an exception is thrown.
-    *   For improved user experience, you can add colorful console output using ANSI escape codes.
+    **2. Streams, Diagnostics & Formatting:**
+    *   Write program data to `stdout`. Write warnings, errors, and debug logs exclusively to `stderr`.
+    *   When argument parsing fails (`FormatException` or `UsageException`), write BOTH the error message and usage help to `stderr`. `stdout` should only receive usage when the user explicitly requests `-h` / `--help`.
+    *   Avoid `print()` in error handlers; use `io.stderr.writeln()`. Prefer `io.stdout.writeln()` over `print()` to comply with the `avoid_print` lint rule unless `analysis_options.yaml` sets `avoid_print: false`.
+    *   Check `stdout.hasTerminal` and `stdout.supportsAnsiEscapes` before emitting ANSI styling. Suppress styling when `NO_COLOR` is present in the environment.
 
-    **3. Building the CLI Application:**
-    *   Use the `dart build cli` command to build your Dart CLI application. This command automatically runs build hooks and bundles code assets.
-    *   The resulting app bundle will be structured with a `bundle/` directory containing `bin/<compiled_executable>` and `lib/<dynamic_libraries>`.
-    *   You can specify the output directory using the `-o` or `--output` option. If omitted, the default path is `build/cli/_/`.
-    *   The main entry-point file can be specified using the `-t` or `--target` option, which must be a Dart file in the `bin/` directory. If omitted and there's a single Dart file in `bin/`, that file is used.
-    *   The verbosity level of the compilation can be set using the `--verbosity` option (error, warning, info, or all).
-    *   Support for `dart build` was introduced in Dart 3.10.
+    **3. Project Configuration & Packaging:**
+    *   Scaffold new command-line projects using `dart create -t console <package_name>`.
+    *   Always declare executable entry points in `pubspec.yaml` under `executables:`.
+    *   Derive `--version` from `pubspec.yaml` using `package:build_version` generating `const packageVersion`.
+    *   Store transient caches in `.dart_tool/<package_name>/`.
 
-    **4. Creating Self-Contained Executables (Cross-Platform):**
-    *   To produce a standalone executable for Windows, macOS, or Linux, use the `dart compile exe` command.
-    *   This command compiles the specified Dart file and its dependencies into native machine code, including a small Dart runtime for type checking and garbage collection.
-    *   You can distribute and run the output file like any other executable.
-    *   Example: `dart compile exe bin/myapp.dart -o /tmp/myapp`.
-    *   Cross-compilation is supported for `exe`.
-        *   Dart 3.8 introduced support for Linux ARM64 and x64 cross-compilation.
-        *   Dart 3.9 introduced support for Linux ARM and RISCV64.
-        *   To use cross-compilation, include flags like `--target-os=linux` (currently only Linux is supported for this flag) and `--target-arch=value`.
-        *   64-bit host operating systems (Linux, macOS, Windows) support cross-compilation to Linux ARM, ARM64, RISCV64, and x64 targets.
+    **4. Argument Parsing & Modern Async:**
+    *   Use `CommandRunner<int>` and `Command<int>` from `package:args` for multi-command CLIs.
+    *   Avoid `Chain.capture()` from `package:stack_trace` (incurs heavy Zone overhead). Use standard `try/catch` with `Trace.from(st).terse` on failure when `--verbose` is passed.
 
-    **5. Creating AOT Modules (for reduced disk space):**
-    *   For distributing multiple command-line apps with reduced disk space requirements, use the `dart compile aot-snapshot` command.
-    *   This produces an output file specific to the current architecture. For example, an `.aot` file created on macOS will only run on macOS.
-    *   Dart supports AOT modules on Windows, macOS, and Linux.
-    *   Example: `dart compile aot-snapshot bin/myapp.dart`.
-    *   The compiled AOT module can be run using `dartaotruntime bin/myapp.aot`.
-    *   Cross-compilation support for `aot-snapshot` is the same as for `exe`.
-    *   The `aot-snapshot` subcommand has the same limitations as the `exe` subcommand.
+    **5. Subprocess Spawning & AOT Resilience:**
+    *   Never spawn `Platform.resolvedExecutable` or `Platform.executable` in child processes. Under standalone AOT compilation (`dart install` / `dart compile exe`), `resolvedExecutable` points to the application binary itself, causing infinite self-invocation loops.
+    *   Depend on `package:cli_util` and use `cli_util.dartExecutable` to resolve the SDK runtime.
 
-    **6. Exit Codes:**
-    *   The `dart format` command can return an exit code of 1 if formatting changes occur, and 0 if no changes occur, when the `--set-exit-if-changed` flag is used. This is useful for continuous integration (CI) systems.
+    **6. Signal Handling & Terminal Teardown:**
+    *   On Windows, `ProcessSignal.sigterm.watch()` throws `UnsupportedError`. Guard `sigterm` with `if (!Platform.isWindows)`.
+    *   If altering `stdin.echoMode`, `stdin.lineMode`, or hiding the cursor (`\x1B[?25l`), restore terminal state in a `SIGINT` listener and `finally` block.
+
+    **7. Testing CLI Applications:**
+    *   Use `package:test_process` and `package:test_descriptor` for high-fidelity subprocess integration tests.
 
   resources:
     - https://pub.dev/packages/args
+    - https://pub.dev/packages/cli_util
+    - https://pub.dev/packages/io
     - https://pub.dev/packages/stack_trace
     - https://pub.dev/packages/test_process
     - https://pub.dev/packages/test_descriptor
-    - https://pub.dev/packages/io
+    - https://pub.dev/packages/build_cli
+    - https://pub.dev/packages/build_version
     - https://dart.dev/tools/dart-build
     - https://dart.dev/tools/dart-compile
     - https://dart.dev/tools/dart-create
     - https://dart.dev/tools/dart-format
     - https://dart.dev/tools/dart-run
-    - https://dart.dev/tools/dart-tool
     - https://dart.dev/tools/pub/cmd/pub-global
 - name: dart-resolve-package-conflicts
   description: Workflow for fixing package version conflicts. Use this when `pub
