@@ -25,19 +25,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Setup Dart
-      uses: dart-lang/setup-dart@v1
+      uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
 
     - name: Install dependencies
       run: dart pub get
 
-    - name: Verify formatting
+    - name: Verify formatting across repository
+      working-directory: .
       run: dart format --output=none --set-exit-if-changed .
 
-    - name: Analyze project source
-      run: dart analyze --fatal-infos
+    - name: Analyze project source and skills
+      working-directory: .
+      run: dart analyze --fatal-infos --packages=repo_tool/.dart_tool/package_config.json repo_tool skills
 
     - name: Run tests
       run: dart test
