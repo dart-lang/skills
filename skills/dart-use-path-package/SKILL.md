@@ -22,7 +22,7 @@ metadata:
 
 ## 1. Core Principles & Cross-Platform Rules
 
-### 1. Never Treat File Paths as Raw Strings
+### Never Treat File Paths as Raw Strings
 * Native file paths on Windows use backslashes (`\`), whereas macOS and Linux use forward slashes (`/`).
 * String operations like `.contains('foo/')`, `.startsWith('foo/')`, or `.split('/')` silently fail on Windows native paths.
 * String interpolation like `'$dir/$file'` injects forward slashes on Windows and produces duplicate slashes (`//`) when `$dir` ends with a trailing slash.
