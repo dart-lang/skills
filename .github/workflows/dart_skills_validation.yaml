@@ -33,11 +33,13 @@ jobs:
     - name: Install dependencies
       run: dart pub get
 
-    - name: Verify formatting
+    - name: Verify formatting across repository
+      working-directory: .
       run: dart format --output=none --set-exit-if-changed .
 
-    - name: Analyze project source
-      run: dart analyze --fatal-infos
+    - name: Analyze project source and skills
+      working-directory: .
+      run: dart analyze --fatal-infos --packages=repo_tool/.dart_tool/package_config.json repo_tool skills
 
     - name: Run tests
       run: dart test
