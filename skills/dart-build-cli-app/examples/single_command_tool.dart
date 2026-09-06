@@ -2,6 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+/// Example template for a single-command Dart CLI script or utility.
+///
+/// Demonstrates argument parsing with `ArgParser`, standard I/O stream routing,
+/// and non-destructive exit code assignment via `exitCode`.
+library;
+
 import 'dart:io';
 
 import 'package:args/args.dart';

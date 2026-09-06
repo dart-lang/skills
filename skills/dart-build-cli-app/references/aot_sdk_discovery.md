@@ -25,9 +25,9 @@ final sdkDir = path.dirname(path.dirname(dart));
 
 ---
 
-## 2. The Solution: `package:cli_util` (>= 0.6.0)
+## 2. The Solution: `package:cli_util` (`^0.6.0`)
 
-Do not write bespoke SDK discovery probes. Depend on `package:cli_util` (version 0.6.0 or higher), which provides memoized, nullable getters that implement a validated 4-tier probe:
+Do not write bespoke SDK discovery probes. Depend on `package:cli_util` (version 0.6.0 or higher), which provides memoized, nullable getters (`dartExecutable` and `sdkPath`) that locate the Dart SDK across both JIT and AOT environments:
 
 ```dart
 import 'dart:io' as io;
@@ -48,11 +48,14 @@ Future<void> runSubprocess() async {
 }
 ```
 
-### Probing Mechanism:
-1. **Fast-path (`Platform.resolvedExecutable`)**: Checks if `resolvedExecutable` resides in a directory with a valid Dart SDK layout (`isValidSdkPath`). This is the hermetic fast-path for JIT execution.
-2. **Environment Variable (`DART_SDK`)**: Checks `Platform.environment['DART_SDK']` if explicitly defined and valid.
-3. **System `PATH` Scan**: Traverses `PATH` entries for `dart` (`dart.exe` and `dart.bat` on Windows), dereferencing symlinks and checking `bin/cache/dart-sdk` for Flutter installations.
-4. **Flutter Fallback (`FLUTTER_ROOT`)**: Probes `FLUTTER_ROOT/bin/cache/dart-sdk`.
+### Potential Dart SDK Locations:
+A valid Dart SDK and `dart` executable may reside in several environmental locations across different developer setups:
+* **Running VM (`Platform.resolvedExecutable`)**: When running on the JIT VM (`dart run`), `resolvedExecutable` points directly to `<dart-sdk>/bin/dart`.
+* **Explicit Environment (`DART_SDK`)**: Defined when a developer explicitly points `DART_SDK` to an SDK installation directory.
+* **System `PATH`**: Resolved via system `PATH` entries (`dart`, `dart.exe`, or `dart.bat`), including dereferencing symlinks and checking `bin/cache/dart-sdk` for Flutter installations.
+* **Flutter Root (`FLUTTER_ROOT`)**: Bundled under `FLUTTER_ROOT/bin/cache/dart-sdk`.
+
+The exact search order and SDK directory validation logic should be delegated to `package:cli_util` rather than re-implemented in application code.
 
 ---
 
