@@ -33,9 +33,10 @@ metadata:
 * `p.normalize(path)` resolves `.` and `..` segments purely lexically without consulting the filesystem or standardizing case.
 * When deduplicating directory paths or comparing physical file identity across symlinks, relative roots, or case-insensitive filesystems, use `p.canonicalize(path)`.
 
-### Strip Location Specifiers Before Path Operations
+### Strip Location Specifiers & Convert URIs Safely
 * Strings formatted as `<path>:<line>-<col>` or `<path>:<line>` are not pure file paths. Passing them directly to `p.normalize` or `Uri.parse` causes bugs (on Windows, `Uri.parse` mistakes `C:` for a URI scheme and `:line` for a port).
 * Extract the trailing `:line-col` suffix via regular expression (`RegExp(r'^(.*?):(\d+(?:-\d+)?)$')`) *before* passing the file path to `package:path`.
+* **URI Boundary Conversions**: When converting between file paths and `Uri` objects, always use `p.toUri(path)` and `p.fromUri(uri)` rather than `Uri.parse(path)` or manual string concatenation.
 
 ---
 
@@ -49,6 +50,7 @@ metadata:
 | `p.extension(path) == '.wasm'` | `path.endsWith('.wasm')` | Matches directory names (`foo.wasm/`) or non-extension suffixes. |
 | `p.withoutExtension(path)` and `p.extension(path, 2)` | `lastIndexOf('.')` + `substring` | Breaks on hidden dotfiles (`.gitignore`) and compound extensions (`.js.map`). |
 | `p.posix.joinAll(p.split(path))` | `path.replaceAll(r'\', '/')` | Ad-hoc separator patching; mixes OS context with POSIX/URL targets. |
+| `p.toUri(path)` / `p.fromUri(uri)` | `Uri.parse(path)` / `uri.path` | Fails on Windows drive letters (`C:`) and leaks `%20` percent-encoding. |
 | `String canonicalDirName(Directory d) => p.basename(p.normalize(d.absolute.path));` | Repeating `p.basename(p.normalize(dir.absolute.path))` inline | Verbose boilerplate repeated across files. |
 
 ---
@@ -57,7 +59,7 @@ metadata:
 
 Never call `.replaceAll('\\', '/')` or `.replaceAll(r'\', '/')` to convert OS-native paths into POSIX paths (for Git, YAML, archive manifests) or URL segments.
 
-**Rule**: Split the native path using `p.split(...)` and join the segments using `p.posix.joinAll(...)` or `p.url.joinAll(...)`.
+**Rule**: Split the relative native path using `p.split(...)`, inspect segments with **Dart 3 list pattern matching**, and join using `p.posix.joinAll(...)` or `p.url.joinAll(...)`. Always call `p.relative(filePath, from: root)` first so leading root segments (`'/'` on POSIX or `r'C:\'` on Windows) do not interfere with relative prefix patterns:
 
 ```dart
 import 'package:path/path.dart' as p;
@@ -65,10 +67,10 @@ import 'package:path/path.dart' as p;
 String computeWebAssetKey(String filePath, String projectRoot) {
   final relative = p.relative(filePath, from: projectRoot);
   final segments = p.split(relative);
-  if (segments.isNotEmpty && segments.first == 'assets') {
-    return p.posix.joinAll(segments);
-  }
-  return p.posix.joinAll(['assets', ...segments]);
+  return switch (segments) {
+    ['assets', ...] => p.posix.joinAll(segments),
+    _ => p.posix.joinAll(['assets', ...segments]),
+  };
 }
 ```
 

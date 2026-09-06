@@ -16,10 +16,10 @@ bool isCanvasKitWasmAsset(File file) {
 String computeWebAssetKey(String filePath, String projectRoot) {
   final relative = p.relative(filePath, from: projectRoot);
   final segments = p.split(relative);
-  if (segments.isNotEmpty && segments.first == 'assets') {
-    return p.posix.joinAll(segments);
-  }
-  return p.posix.joinAll(['assets', ...segments]);
+  return switch (segments) {
+    ['assets', ...] => p.posix.joinAll(segments),
+    _ => p.posix.joinAll(['assets', ...segments]),
+  };
 }
 
 /// Inserts a content hash before file extensions, safely handling compound
