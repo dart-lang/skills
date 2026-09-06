@@ -154,13 +154,20 @@ Copy this checklist to track progress when implementing complex pattern matching
 - [ ] Apply Guard clauses (`when condition`) for logic that cannot be expressed via patterns.
 - [ ] Handle unmatched cases using a Wildcard (`_`) or `default` clause (if not using a sealed class).
 - [ ] Run static analyzer for exhaustiveness and dead code (`dart analyze`).
+- [ ] Verify runtime Map/JSON pattern behavior on omitted keys (`containsKey` semantics) vs explicit `null` values.
 
-### Feedback Loop: Exhaustiveness Checking
+### Feedback Loop 1: Exhaustiveness Checking (Static Verification)
 When switching over `sealed` classes or enums, ensure all subtypes are handled at compile time:
 
 1. **Run analyzer:** Execute `dart analyze`.
 2. **Review errors:** Look for "The type 'X' is not exhaustively matched by the switch cases" or unreachable pattern arm warnings.
 3. **Fix:** Add the missing Object patterns for unhandled subtypes, or add an explicit wildcard (`_`) arm if a default fallback or error is acceptable.
+
+### Feedback Loop 2: Runtime Map & JSON Pattern Verification
+Because `dart analyze` cannot statically verify dynamic `Map<String, dynamic>` keys, validate runtime pattern semantics explicitly:
+
+1. **Omitted Keys vs. Explicit `null`**: A map pattern `{'key': String? val}` checks `map.containsKey('key')`. If `'key'` is omitted from the JSON payload, the pattern fails to match at runtime even though `String?` is nullable. Extract optional keys from the validated map directly (`map['key'] as String?`).
+2. **Fast-Fail Fallback**: Ensure unmatched or malformed map structures hit an explicit `_ => throw FormatException(...)` arm rather than silently failing an `if-case` check.
 
 ## Examples
 
