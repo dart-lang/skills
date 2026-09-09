@@ -30,7 +30,7 @@ Calling `dart:io`'s `exit(int code)` invokes `Platform::Exit(code)` in the C++ r
 * **Buffer Truncation**: `stdout` and `stderr` are buffered asynchronous `IOSink` streams. `exit()` drops unflushed bytes.
 * **Resource Leaks**: `finally` blocks (closing locks, deleting temp directories) are bypassed.
 
-**Rule**: Avoid calling `exit(code)` directly during normal execution; set `exitCode = code` or return an integer exit code from `CommandRunner<int>` (from `package:args`) and allow the asynchronous `main()` function to return naturally. Reserve `exit(code)` strictly for unrecoverable fatal callbacks after flushing streams.
+**Rule**: Avoid calling `exit(code)` directly during normal execution; set `exitCode = code` or return an integer exit code from `CommandRunner<int>` (from `package:args`) and allow the asynchronous `main()` function to return naturally. Do not call `exit()` on unhandled errors; throw an unhandled `Error` or exception so the runtime unwinds cleanly and exits with a non-zero status.
 
 Standard POSIX exit codes (`/usr/include/sysexits.h`):
 * `0`: Success (`EX_OK` / `ExitCode.success.code`)
@@ -44,7 +44,7 @@ Standard POSIX exit codes (`/usr/include/sysexits.h`):
 ```dart
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:io/io.dart'; // Provides standard POSIX ExitCode constants
+import 'package:io/io.dart' show ExitCode; // Provides standard POSIX ExitCode constants
 
 Future<void> main(List<String> args) async {
   final runner = CommandRunner<int>('tool', 'CLI tool description.');
@@ -52,8 +52,9 @@ Future<void> main(List<String> args) async {
     final status = await runner.run(args);
     exitCode = status ?? ExitCode.success.code;
   } on UsageException catch (e) {
-    stderr.writeln(e.message);
-    stderr.writeln(e.usage);
+    stderr
+      ..writeln(e.message)
+      ..writeln(e.usage);
     exitCode = ExitCode.usage.code;
   }
 }
@@ -74,25 +75,9 @@ Future<void> main(List<String> args) async {
 }
 ```
 
-### Asynchronous Stream Drainage Before Fatal Exits (`flushThenExit`)
-If an unrecoverable exception is caught inside a callback where natural return is impossible, do not invoke bare `exit(code)`. Await closure of standard I/O sinks first:
-
-```dart
-import 'dart:io';
-
-Future<void> flushThenExit(int status) async {
-  try {
-    await Future.wait([stdout.close(), stderr.close()]);
-  } catch (_) {
-    // Suppress secondary socket errors during stream closure (e.g. Broken Pipe).
-  }
-  exit(status);
-}
-```
-
 ---
 
-## 2. Streams, Diagnostics & Formatting
+## 2. Output, Diagnostics & Formatting
 
 * **Data vs. Diagnostics**: Write intended program results and machine-readable data exclusively to `stdout`. Write warnings, error messages, and debug logs exclusively to `stderr`.
 * **The Error Usage Rule**: When an argument parsing or mandatory option error occurs (`FormatException`, `UsageException`, or `ArgumentError` thrown when accessing a missing `mandatory: true` option via `results.option(...)`), **both the error message and the usage text must write to `stderr`**, and exit code `64` (`EX_USAGE`) must be returned. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
@@ -110,8 +95,8 @@ Future<void> flushThenExit(int status) async {
 
 ## 3. Project Configuration & Packaging
 
-### Scaffolding & Pubspec Entrypoint Mapping (`executables:`)
-Scaffold new command-line projects using `dart create -t console <package_name>`, which initializes the standard `bin/` and `lib/` layout. Always declare executable entry points in `pubspec.yaml` under `executables:` to enable clean invocation via `dart run <command>` (without specifying `bin/...dart`) and configure global binary symlinks for `dart install`:
+### Scaffolding & Pubspec Executable Mapping (`executables:`)
+Scaffold new command-line projects using `dart create -t console <package_name>`, which initializes the standard `bin/` and `lib/` layout. Always declare executables in `pubspec.yaml` under `executables:` to map command names to scripts in `bin/`, enabling clean invocation via `dart run <command>` (without specifying `bin/...dart`) and configuring global binary symlinks for `dart install`:
 
 ```yaml
 name: my_cli
@@ -149,7 +134,7 @@ Import `package:args` to manage command-line arguments:
 
 ```dart
 import 'dart:io';
-import 'package:io/io.dart';
+import 'package:io/io.dart' show ExitCode;
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> runMain(List<String> args) async {
@@ -170,9 +155,9 @@ Future<void> runMain(List<String> args) async {
 
 ## 6. Subprocess Spawning & AOT Resilience
 
-When spawning Dart SDK subprocesses (e.g., `dart format`, `dart test`, `build_runner`):
+When spawning Dart SDK subprocesses or executing other Dart tools (e.g., `dart format`, `dart test`, `build_runner`):
 
-* **Never spawn `Platform.resolvedExecutable` or `Platform.executable`**: In AOT-compiled binaries (`dart install` / `dart compile exe`), `resolvedExecutable` points to the compiled application binary itself, causing recursive self-invocation loops or flag rejection crashes.
+* **Do not assume `Platform.resolvedExecutable` or `Platform.executable` points to the `dart` command-line executable**: In standalone AOT-compiled binaries (`dart install` / `dart compile exe`), `resolvedExecutable` points to the compiled application binary itself, causing recursive self-invocation loops or flag rejection crashes.
 * **Use `package:cli_util`**: Resolve the Dart SDK executable using `cli_util.dartExecutable` or `cli_util.sdkPath` instead of writing custom PATH or directory scrapers.
 * See version requirements and detailed technical guide in [references/aot_sdk_discovery.md](references/aot_sdk_discovery.md).
 

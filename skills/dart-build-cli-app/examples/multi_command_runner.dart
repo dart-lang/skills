@@ -12,7 +12,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:io/io.dart';
+import 'package:io/io.dart' show ExitCode;
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> main(List<String> args) async {
@@ -23,8 +23,9 @@ Future<void> main(List<String> args) async {
     exitCode = status ?? ExitCode.success.code;
   } on UsageException catch (e) {
     // Usage errors (invalid flags/arguments) must write to stderr.
-    stderr.writeln(e.message);
-    stderr.writeln(e.usage);
+    stderr
+      ..writeln(e.message)
+      ..writeln(e.usage);
     exitCode = ExitCode.usage.code;
   } catch (e, st) {
     stderr.writeln('Fatal error: $e');

@@ -39,23 +39,24 @@ Future<void> main(List<String> args) async {
 
     if (results.flag('help')) {
       // Explicit help requested by user: write usage to stdout.
-      stdout.writeln('Usage: tool [options]');
-      stdout.writeln(parser.usage);
-      exitCode = 0; // Standard POSIX success (EX_OK)
+      stdout
+        ..writeln('Usage: tool [options]')
+        ..writeln(parser.usage);
       return;
     }
 
     await _runTool(results);
-    exitCode = 0; // Standard POSIX success (EX_OK)
   } on FormatException catch (e) {
     // Argument parse error: write error message AND usage to stderr.
-    stderr.writeln('Error: ${e.message}');
-    stderr.writeln(parser.usage);
+    stderr
+      ..writeln('Error: ${e.message}')
+      ..writeln(parser.usage);
     exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
   } on ArgumentError catch (e) {
     // Missing mandatory option error thrown by results.option():
-    stderr.writeln('Error: ${e.message}');
-    stderr.writeln(parser.usage);
+    stderr
+      ..writeln('Error: ${e.message}')
+      ..writeln(parser.usage);
     exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
   } catch (e, st) {
     stderr.writeln('Fatal error: $e');
@@ -68,8 +69,9 @@ Future<void> main(List<String> args) async {
 
 /// Encapsulates the tool's core business logic.
 ///
-/// In production packages, this logic should live in `lib/src/` rather than
-/// directly in the `bin/` entrypoint to ensure fast in-memory unit testability.
+/// In larger applications, place this logic in `lib/src/` rather than
+/// directly in `bin/` so unit tests can import and test functions directly
+/// without needing to spawn an OS subprocess.
 Future<void> _runTool(ArgResults args) async {
   final inputPath = args.option('input')!;
   stdout.writeln('Processing $inputPath...');

@@ -19,9 +19,9 @@ final sdkDir = path.dirname(path.dirname(dart));
 * **AOT Binary (`dart compile exe`, `dart install`)**: `Platform.resolvedExecutable` points to the compiled application binary (e.g. `~/.dart/install/app-bundles/my_cli/.../bin/my_cli`).
 
 ### Consequences of Naive Resolution:
-1. **Recursive Subprocess Loop**: If the application spawns `Platform.resolvedExecutable` expecting the `dart` VM, it spawns itself recursively.
-2. **Flag Rejection Crash**: If the CLI passes VM flags (such as `--observe`, `--enable-vm-service`, or subcommands like `run` or `test`), the compiled binary fails immediately with unknown option errors.
-3. **Broken SDK Root**: Naive directory traversal looks for `libraries.json` inside the app bundle folder, crashing SDK tools and analyzers with missing SDK errors.
+1. **Recursive Subprocess Loop**: If the application executes `Platform.resolvedExecutable` expecting the `dart` VM, it spawns itself recursively.
+2. **Flag Rejection Crash**: If the child process passes VM flags (such as `--observe`, `--enable-vm-service`) or tool subcommands (like `run`, `format`, or `test`), the compiled binary fails immediately with unknown option errors.
+3. **Broken SDK Root**: Traversing parent directories from `Platform.resolvedExecutable` to locate SDK resources (such as `libraries.json`) fails because the binary resides in an application bundle directory rather than a Dart SDK installation.
 
 ---
 

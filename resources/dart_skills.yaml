@@ -133,37 +133,38 @@
     and subprocess spawning for Dart command-line interface (CLI) applications.
   examplePrompt: "Create a production CLI app structure with CommandRunner and clean exit codes"
   instructions: |
-    **1. Process Lifecycle & Clean Exits (Avoid bare `exit(N)`):**
-    *   Avoid calling `exit(code)` directly during normal execution; it halts the OS process via C++ `Platform::Exit()`, destroying VM Service pause-on-exit debugging, breaking `package:coverage` collection RPCs, and dropping unflushed `stdout`/`stderr` buffers.
-    *   Set `io.exitCode = code` or return an integer exit code from `CommandRunner<int>` (from `package:args`). Allow asynchronous `main()` to return naturally.
-    *   Reserve `exit(code)` strictly for unrecoverable fatal callbacks where returning is impossible, awaiting `Future.wait([stdout.close(), stderr.close()])` first.
+    1. **Process Lifecycle & Clean Exits (Avoid bare `exit(N)`):**
+       * Avoid calling `exit(code)` directly during normal execution; it halts the OS process via C++ `Platform::Exit()`, destroying VM Service pause-on-exit debugging, breaking `package:coverage` collection RPCs, and dropping unflushed `stdout`/`stderr` buffers.
+       * Set `exitCode = code` or return an integer exit code from `CommandRunner<int>` (from `package:args`). Allow asynchronous `main()` to return naturally.
+       * Do not call `exit()` on unhandled errors; throw an unhandled `Error` or exception so the runtime unwinds cleanly and exits with a non-zero status.
 
-    **2. Streams, Diagnostics & Formatting:**
-    *   Write program data to `stdout`. Write warnings, errors, and debug logs exclusively to `stderr`.
-    *   When argument parsing fails (`FormatException` or `UsageException`), write BOTH the error message and usage help to `stderr`. `stdout` should only receive usage when the user explicitly requests `-h` / `--help`.
-    *   Avoid `print()` in error handlers; use `io.stderr.writeln()`. Prefer `io.stdout.writeln()` over `print()` to comply with the `avoid_print` lint rule unless `analysis_options.yaml` sets `avoid_print: false`.
-    *   Check `stdout.hasTerminal` and `stdout.supportsAnsiEscapes` before emitting ANSI styling. Suppress styling when `NO_COLOR` is present in the environment.
+    2. **Output, Diagnostics & Formatting:**
+       * Write program data to `stdout`. Write warnings, errors, and debug logs exclusively to `stderr`.
+       * When argument parsing fails (`FormatException` or `UsageException`), write BOTH the error message and usage help to `stderr`. `stdout` should only receive usage when the user explicitly requests `-h` / `--help`.
+       * Avoid `print()` in error handlers; use `stderr.writeln()`. Prefer `stdout.writeln()` over `print()` to comply with the `avoid_print` lint rule unless `analysis_options.yaml` sets `avoid_print: false`.
+       * Check `stdout.hasTerminal` and `stdout.supportsAnsiEscapes` before emitting ANSI styling. Suppress styling when `NO_COLOR` is present in the process environment (`Platform.environment`).
 
-    **3. Project Configuration & Packaging:**
-    *   Scaffold new command-line projects using `dart create -t console <package_name>`.
-    *   Always declare executable entry points in `pubspec.yaml` under `executables:`.
-    *   Derive `--version` from `pubspec.yaml` using `package:build_version` generating `const packageVersion`.
-    *   Store transient caches in `.dart_tool/<package_name>/`.
+    3. **Project Configuration & Packaging:**
+       * Scaffold new command-line projects using `dart create -t console <package_name>`.
+       * Declare executables in `pubspec.yaml` under `executables:` to map commands to Dart scripts in `bin/`.
+       * Derive `--version` from `pubspec.yaml` using `package:build_version` generating `const packageVersion`.
+       * Store transient caches in `.dart_tool/<package_name>/`.
 
-    **4. Argument Parsing & Modern Async:**
-    *   Use `CommandRunner<int>` and `Command<int>` from `package:args` for multi-command CLIs.
-    *   Avoid `Chain.capture()` from `package:stack_trace` (incurs heavy Zone overhead). Use standard `try/catch` with `Trace.from(st).terse` on failure when `--verbose` is passed.
+    4. **Argument Parsing & Command Execution:**
+       * Use `package:args` (`ArgParser`) for parsing command-line flags and options.
+       * Use `CommandRunner<int>` and `Command<int>` from `package:args` for multi-command CLIs.
+       * Handle asynchronous errors using standard `try/catch` blocks, formatting stack traces with `Trace.from(st).terse` (from `package:stack_trace`) when `--verbose` is passed.
 
-    **5. Subprocess Spawning & AOT Resilience:**
-    *   Never spawn `Platform.resolvedExecutable` or `Platform.executable` in child processes. Under standalone AOT compilation (`dart install` / `dart compile exe`), `resolvedExecutable` points to the application binary itself, causing infinite self-invocation loops.
-    *   Depend on `package:cli_util` and use `cli_util.dartExecutable` to resolve the SDK runtime.
+    5. **Subprocess Spawning & AOT Resilience:**
+       * To run another Dart program or SDK tool, do not assume `Platform.resolvedExecutable` or `Platform.executable` refers to the `dart` command-line program. Under standalone AOT compilation (`dart install` / `dart compile exe`), `resolvedExecutable` points to the application binary itself, causing infinite self-invocation loops.
+       * Depend on `package:cli_util` (>= 0.6.0) and use `cli_util.dartExecutable` to resolve the SDK runtime across both JIT and AOT environments.
 
-    **6. Signal Handling & Terminal Teardown:**
-    *   On Windows, `ProcessSignal.sigterm.watch()` throws `UnsupportedError`. Guard `sigterm` with `if (!Platform.isWindows)`.
-    *   If altering `stdin.echoMode`, `stdin.lineMode`, or hiding the cursor (`\x1B[?25l`), restore terminal state in a `SIGINT` listener and `finally` block.
+    6. **Signal Handling & Terminal Teardown:**
+       * On Windows, `ProcessSignal.sigterm.watch()` throws `UnsupportedError`. Guard `sigterm` with `if (!Platform.isWindows)`.
+       * If altering `stdin.echoMode`, `stdin.lineMode`, or hiding the cursor (`\x1B[?25l`), restore terminal state in a `SIGINT` listener and `finally` block.
 
-    **7. Testing CLI Applications:**
-    *   Use `package:test_process` and `package:test_descriptor` for high-fidelity subprocess integration tests.
+    7. **Testing CLI Applications:**
+       * Use `package:test_process` and `package:test_descriptor` for high-fidelity subprocess integration tests.
 
   resources:
     - https://pub.dev/packages/args
