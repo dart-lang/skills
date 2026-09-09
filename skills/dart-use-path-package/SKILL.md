@@ -11,8 +11,8 @@ metadata:
 
 ## Contents
 * [1. Core Principles & Cross-Platform Rules](#1-core-principles--cross-platform-rules)
-* [2. String Anti-Patterns to package:path Mapping](#2-string-anti-patterns-to-packagepath-mapping)
-* [3. Bridging Native Paths to POSIX & URL Contexts](#3-bridging-native-paths-to-posix--url-contexts)
+* [2. Recommended package:path Idioms vs. String Anti-Patterns](#2-recommended-packagepath-idioms-vs-string-anti-patterns)
+* [3. Bridging Native Paths to POSIX, Git, & URL Contexts](#3-bridging-native-paths-to-posix-git--url-contexts)
 * [4. Mockable File Systems (`package:file` vs. Global `p.*`)](#4-mockable-file-systems-packagefile-vs-global-p)
 * [5. Extensions, Compound Extensions & Stem Extraction](#5-extensions-compound-extensions--stem-extraction)
 * [6. Workflows & Audit Checklist](#6-workflows--audit-checklist)
@@ -22,7 +22,7 @@ metadata:
 
 ## 1. Core Principles & Cross-Platform Rules
 
-### Never Treat File Paths as Raw Strings
+### Avoid Treating File Paths as Raw Strings
 * Native file paths on Windows use backslashes (`\`), whereas macOS and Linux use forward slashes (`/`).
 * String operations like `.contains('foo/')`, `.startsWith('foo/')`, or `.split('/')` silently fail on Windows native paths.
 * String interpolation like `'$dir/$file'` injects forward slashes on Windows and produces duplicate slashes (`//`) when `$dir` ends with a trailing slash.
@@ -47,24 +47,68 @@ metadata:
 
 ## 2. Recommended package:path Idioms vs. String Anti-Patterns
 
-| Prefer (`package:path` Idiom) | Avoid (String Anti-Pattern) | Risk / Failure Mode |
-| :--- | :--- | :--- |
-| `p.join(dir, file)` | `'$dir/$file'` or `'a/$b'` | Injects `/` on Windows; produces `//` if `$dir` has a trailing slash. |
-| `p.split(path).contains('foo')` | `path.contains('foo/')` | Fails on Windows (`foo\bar`); false positive on partial names (`barfoo/`). |
-| `p.split(path).first == 'foo'` or `p.isWithin('foo', path)` | `path.startsWith('foo/')` | Fails on Windows; misses relative prefix variants (`./foo/`). |
-| `p.extension(path) == '.wasm'` | `path.endsWith('.wasm')` | Matches directory names (`foo.wasm/`) or non-extension suffixes. |
-| `p.withoutExtension(path)` and `p.extension(path, 2)` | `lastIndexOf('.')` + `substring` | Breaks on hidden dotfiles (`.gitignore`) and compound extensions (`.js.map`). |
-| `p.posix.joinAll(p.split(path))` | `path.replaceAll(r'\', '/')` | Ad-hoc separator patching; mixes OS context with POSIX/URL targets. |
-| `p.toUri(path)` / `p.fromUri(uri)` | `Uri.parse(path)` / `uri.path` | Fails on Windows drive letters (`C:`) and leaks `%20` percent-encoding. |
-| `String canonicalDirName(Directory d) => p.basename(p.normalize(d.absolute.path));` | Repeating `p.basename(p.normalize(dir.absolute.path))` inline | Verbose boilerplate repeated across files. |
+### Path Joining
+* **Prefer**: `p.join(dir, file)`
+* **Avoid**: `'$dir/$file'` or `'a/$b'`
+* **Why**: String interpolation injects `/` on Windows and creates duplicate
+  slashes (`//`) when `$dir` ends with a trailing separator.
+
+### Segment Matching
+* **Prefer**: `p.split(path).contains('foo')`
+* **Avoid**: `path.contains('foo/')`
+* **Why**: String matching fails on Windows backslashes (`foo\bar`) and produces
+  false positives on partial substring names (e.g. `barfoo/`).
+
+### Root and Directory Prefixes
+* **Prefer**: `p.split(path).first == 'foo'` or `p.isWithin('foo', path)`
+* **Avoid**: `path.startsWith('foo/')`
+* **Why**: Fails on Windows separators and misses relative prefix variants such
+  as `./foo/`.
+
+### File Extensions
+* **Prefer**: `p.extension(path) == '.wasm'`
+* **Avoid**: `path.endsWith('.wasm')`
+* **Why**: Substring suffix matching falsely matches directories (`foo.wasm/`)
+  or non-extension suffixes.
+
+### Extension Slicing and Compound Extensions
+* **Prefer**: `p.withoutExtension(path)` and `p.extension(path, 2)`
+* **Avoid**: `path.lastIndexOf('.')` and manual `substring` slicing
+* **Why**: Manual arithmetic breaks on hidden dotfiles (`.gitignore`) and
+  compound extensions (`.js.map`, `.tar.gz`).
+
+### POSIX and URL Path Conversion
+* **Prefer**: `p.posix.joinAll(p.split(path))` or `p.url.joinAll(p.split(path))`
+* **Avoid**: `path.replaceAll(r'\', '/')`
+* **Why**: Ad-hoc separator replacement fails on root drives and mixes OS
+  context with POSIX or URL targets.
+
+### URI Conversion
+* **Prefer**: `p.toUri(path)` and `p.fromUri(uri)`
+* **Avoid**: `Uri.parse(path)` and `uri.path`
+* **Why**: Direct URI parsing fails on Windows drive letters (`C:`) and leaks
+  percent-encoding (e.g. `%20` for spaces).
+
+### Directory Basename Helper
+* **Prefer**:
+  `String canonicalDirName(Directory d) => p.basename(p.normalize(d.absolute.path));`
+* **Avoid**: Repeating `p.basename(p.normalize(dir.absolute.path))` inline
+  across files.
+* **Why**: Centralizes canonical directory naming logic and reduces boilerplate.
 
 ---
 
-## 3. Bridging Native Paths to POSIX & URL Contexts
+## 3. Bridging Native Paths to POSIX, Git, & URL Contexts
 
-Never call `.replaceAll('\\', '/')` or `.replaceAll(r'\', '/')` to convert OS-native paths into POSIX paths (for Git, YAML, archive manifests) or URL segments.
+Avoid calling `.replaceAll('\\', '/')` or `.replaceAll(r'\', '/')` to convert
+OS-native paths into POSIX paths (for Git, YAML, archive manifests) or URL
+segments.
 
-**Rule**: Split the relative native path using `p.split(...)`, inspect segments with **Dart 3 list pattern matching**, and join using `p.posix.joinAll(...)` or `p.url.joinAll(...)`. Always call `p.relative(filePath, from: root)` first so leading root segments (`'/'` on POSIX or `r'C:\'` on Windows) do not interfere with relative prefix patterns:
+**Rule**: Split the relative native path using `p.split(...)`, inspect segments
+with **Dart 3 list pattern matching**, and join using `p.posix.joinAll(...)` or
+`p.url.joinAll(...)`. Always call `p.relative(filePath, from: root)` first so
+leading root segments (`'/'` on POSIX or `r'C:\'` on Windows) do not interfere
+with relative prefix patterns:
 
 ```dart
 import 'package:path/path.dart' as p;
@@ -79,11 +123,24 @@ String computeWebAssetKey(String filePath, String projectRoot) {
 }
 ```
 
+### Git Paths and Repository Metadata
+* Git repository tree objects, `.gitignore` pattern rules, `.gitattributes`,
+  and git-tracked symlinks strictly use POSIX forward slashes (`/`), even on
+  Windows.
+* Inserting native Windows backslashes (`\`) into `.gitignore` or git commands
+  causes Git to treat `\` as an escape character rather than a directory
+  separator, silently breaking pattern matching.
+* When generating `.gitignore` entries, repository manifests, or symlink
+  targets programmatically from native file paths, convert the relative native
+  path using `p.posix.joinAll(p.split(relativePath))` or `p.posix.join(...)`.
+
 ---
 
 ## 4. Mockable File Systems (`package:file` vs. Global `p.*`)
 
-In codebases that use `package:file` (such as `flutter_tools` or CLI applications tested with `MemoryFileSystem`), **do not** call top-level `p.*` functions on `File` or `Directory` paths.
+In codebases that use `package:file` (e.g., CLI applications or services tested
+with `MemoryFileSystem`), avoid calling top-level `p.*` functions on `File` or
+`Directory` paths.
 
 * Top-level `p.*` functions bind to the *host operating system* running the test.
 * If a unit test creates a `MemoryFileSystem(style: FileSystemStyle.windows)` on a Linux or macOS runner, global `p.split(file.path)` will split on `/` instead of `\`, breaking the test.
@@ -136,6 +193,7 @@ String insertContentHash(String filename, String hash) {
 - [ ] Replace `.endsWith('.ext')` on file paths with `p.extension(path) == '.ext'`.
 - [ ] Replace manual dot-index slicing with `p.withoutExtension(path)` and `p.extension(path, [level])`.
 - [ ] Verify that code using `package:file` accesses `fileSystem.path` instead of global `p.*`.
+- [ ] Ensure Git paths, `.gitignore` entries, and symlink targets use `p.posix` forward slashes.
 
 ---
 

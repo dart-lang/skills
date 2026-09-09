@@ -32,3 +32,14 @@ String insertContentHash(String filename, String hash) {
   final stem = filename.substring(0, filename.length - ext.length);
   return '$stem.$hash$ext';
 }
+
+/// Converts an OS-native relative path to a POSIX path suitable for
+/// `.gitignore`, `.gitattributes`, or Git tree objects.
+String toGitPath(String relativeNativePath) =>
+    p.posix.joinAll(p.split(relativeNativePath));
+
+void main() {
+  print('Git path: ${toGitPath(r'lib\src\file.dart')}');
+  print('Asset key: ${computeWebAssetKey('assets/icon.png', '.')}');
+  print('Content hash: ${insertContentHash('main.dart.js.map', 'a1b2c3')}');
+}
