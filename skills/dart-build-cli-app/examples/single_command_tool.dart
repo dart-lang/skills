@@ -52,6 +52,11 @@ Future<void> main(List<String> args) async {
     stderr.writeln('Error: ${e.message}');
     stderr.writeln(parser.usage);
     exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
+  } on ArgumentError catch (e) {
+    // Missing mandatory option error thrown by results.option():
+    stderr.writeln('Error: ${e.message}');
+    stderr.writeln(parser.usage);
+    exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
   } catch (e, st) {
     stderr.writeln('Fatal error: $e');
     if (args.contains('-v') || args.contains('--verbose')) {

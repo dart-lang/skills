@@ -64,6 +64,16 @@ Keep `bin/*.dart` files strictly as minimal entrypoint trampolines (instantiate 
 
 * **Rationale**: Code in `bin/` cannot be cleanly imported via `package:` URIs. Moving logic into `lib/src/` allows the entire command runner, subcommand hierarchy, and business logic to be unit-tested in-memory in milliseconds (`< 2ms`) without spawning OS subprocesses.
 
+```dart
+// bin/my_cli.dart — Thin entrypoint trampoline
+import 'dart:io';
+import 'package:my_cli/src/cli.dart';
+
+Future<void> main(List<String> args) async {
+  exitCode = await runCli(args);
+}
+```
+
 ### Asynchronous Stream Drainage Before Fatal Exits (`flushThenExit`)
 If an unrecoverable exception is caught inside a callback where natural return is impossible, do not invoke bare `exit(code)`. Await closure of standard I/O sinks first:
 
@@ -85,7 +95,7 @@ Future<void> flushThenExit(int status) async {
 ## 2. Streams, Diagnostics & Formatting
 
 * **Data vs. Diagnostics**: Write intended program results and machine-readable data exclusively to `stdout`. Write warnings, error messages, and debug logs exclusively to `stderr`.
-* **The Error Usage Rule**: When an argument parsing error occurs (`FormatException` or `UsageException`), **both the error message and the usage text must write to `stderr`**. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
+* **The Error Usage Rule**: When an argument parsing or mandatory option error occurs (`FormatException`, `UsageException`, or `ArgumentError` thrown when accessing a missing `mandatory: true` option via `results.option(...)`), **both the error message and the usage text must write to `stderr`**, and exit code `64` (`EX_USAGE`) must be returned. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
 * **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `stderr.writeln()` for all failure notifications. For standard output, prefer `stdout.writeln()` over `print()` to comply with the [`avoid_print`](https://dart.dev/tools/linter-rules/avoid_print) lint rule (unless `analysis_options.yaml` explicitly configures `avoid_print: false`).
 * **Terminal Capability Detection & `NO_COLOR`**: Verify `stdout.hasTerminal`, `stdout.supportsAnsiEscapes`, and `!Platform.environment.containsKey('NO_COLOR')` before emitting ANSI color or cursor escape codes:
   ```dart
