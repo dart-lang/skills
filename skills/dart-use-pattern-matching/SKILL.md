@@ -172,7 +172,9 @@ Because `dart analyze` cannot statically verify dynamic `Map<String, dynamic>` k
 ## Examples
 
 ### Polymorphic JSON Deserialization (Discriminated Unions)
-Use Map patterns with switch expressions to validate tagged JSON payloads and construct `sealed` class hierarchies:
+Use Map patterns with switch expressions to validate tagged JSON payloads and
+construct `sealed` class hierarchies (see
+[examples/json_patterns.dart](examples/json_patterns.dart)):
 
 ```dart
 sealed class ApiResponse {}
@@ -197,10 +199,14 @@ ApiResponse parseApiResponse(Map<String, dynamic> json) => switch (json) {
 ```
 
 ### Nested JSON Validation and Optional Fields
-Use nested Map and List patterns to validate required schema structure and extract collections in a single step.
+Use nested Map and List patterns to validate required schema structure and
+extract collections in a single step (see
+[examples/json_patterns.dart](examples/json_patterns.dart)).
 
-> [!NOTE]
-> Map patterns check for key existence (`containsKey`). If an optional JSON key might be omitted entirely from the payload (rather than explicitly passed as `'key': null`), destructure required keys via the pattern and extract optional fields directly from the matched submap:
+Map patterns check for key existence (`containsKey`). If an optional JSON key
+might be omitted entirely from the payload (rather than explicitly passed as
+`'key': null`), destructure required keys via the pattern and extract optional
+fields directly from the matched submap:
 
 ```dart
 void processUserPayload(Map<String, dynamic> json) {
