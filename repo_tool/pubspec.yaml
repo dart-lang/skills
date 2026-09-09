@@ -9,6 +9,8 @@ dependencies:
   path: ^1.9.0
 
 dev_dependencies:
+  # Dependencies required by repo_tool and for static analysis / linting
+  # of Dart code snippets and examples across the skills/ directory.
   args: ^2.5.0
   cli_util: ^0.6.0
   io: ^1.0.4
