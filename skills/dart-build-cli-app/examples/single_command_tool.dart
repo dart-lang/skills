@@ -11,6 +11,7 @@ library;
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:io/io.dart' show ExitCode;
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> main(List<String> args) async {
@@ -51,19 +52,19 @@ Future<void> main(List<String> args) async {
     stderr
       ..writeln('Error: ${e.message}')
       ..writeln(parser.usage);
-    exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
+    exitCode = ExitCode.usage.code;
   } on ArgumentError catch (e) {
     // Missing mandatory option error thrown by results.option():
     stderr
       ..writeln('Error: ${e.message}')
       ..writeln(parser.usage);
-    exitCode = 64; // Standard POSIX command-line usage error (EX_USAGE)
+    exitCode = ExitCode.usage.code;
   } catch (e, st) {
     stderr.writeln('Fatal error: $e');
     if (args.contains('-v') || args.contains('--verbose')) {
       stderr.writeln(Trace.from(st).terse);
     }
-    exitCode = 70; // Standard POSIX internal software error (EX_SOFTWARE)
+    exitCode = ExitCode.software.code;
   }
 }
 

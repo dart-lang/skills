@@ -39,7 +39,10 @@ Standard POSIX exit codes (`/usr/include/sysexits.h`):
 * `70`: Internal software crash (`EX_SOFTWARE` / `ExitCode.software.code`)
 * `78`: Configuration error (`EX_CONFIG` / `ExitCode.config.code`)
 
-*Note*: For simple single-file scripts, use explicit integer literals (`0`, `64`, `70`). For production multi-command packages, import `package:io/io.dart` and use `ExitCode` constants.
+*Note*: Prefer importing `package:io/io.dart` and using `ExitCode` constants
+(e.g., `ExitCode.usage.code`, `ExitCode.software.code`) rather than magic
+integer literals. For minimal standalone scripts without package dependencies,
+standard POSIX integer literals (`0`, `64`, `70`) may be used.
 
 ```dart
 import 'dart:io';
@@ -80,7 +83,13 @@ Future<void> main(List<String> args) async {
 ## 2. Output, Diagnostics & Formatting
 
 * **Data vs. Diagnostics**: Write intended program results and machine-readable data exclusively to `stdout`. Write warnings, error messages, and debug logs exclusively to `stderr`.
-* **The Error Usage Rule**: When an argument parsing or mandatory option error occurs (`FormatException`, `UsageException`, or `ArgumentError` thrown when accessing a missing `mandatory: true` option via `results.option(...)`), **both the error message and the usage text must write to `stderr`**, and exit code `64` (`EX_USAGE`) must be returned. `stdout` should ONLY receive usage help when the user explicitly requests it via `--help` or `-h`.
+* **The Error Usage Rule**: When an argument parsing or mandatory option error
+  occurs (`FormatException`, `UsageException`, or `ArgumentError` thrown when
+  accessing a missing `mandatory: true` option via `results.option(...)`), **both
+  the error message and the usage text must write to `stderr`**, and exit code
+  `64` (`EX_USAGE` / `ExitCode.usage.code`) must be returned. `stdout` should
+  ONLY receive usage help when the user explicitly requests it via `--help` or
+  `-h`.
 * **No `print()` in Error Handlers**: `print()` routes to `stdout`. Use `stderr.writeln()` for all failure notifications. For standard output, prefer `stdout.writeln()` over `print()` to comply with the [`avoid_print`](https://dart.dev/tools/linter-rules/avoid_print) lint rule (unless `analysis_options.yaml` explicitly configures `avoid_print: false`).
 * **Terminal Capability Detection & `NO_COLOR`**: Verify `stdout.hasTerminal`, `stdout.supportsAnsiEscapes`, and `!Platform.environment.containsKey('NO_COLOR')` before emitting ANSI color or cursor escape codes:
   ```dart
