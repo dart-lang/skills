@@ -173,59 +173,21 @@ Because `dart analyze` cannot statically verify dynamic `Map<String, dynamic>` k
 
 ### Polymorphic JSON Deserialization (Discriminated Unions)
 Use Map patterns with switch expressions to validate tagged JSON payloads and
-construct `sealed` class hierarchies (see
-[examples/json_patterns.dart](examples/json_patterns.dart)):
-
-```dart
-sealed class ApiResponse {}
-
-class SuccessResponse implements ApiResponse {
-  final Map<String, dynamic> data;
-  SuccessResponse(this.data);
-}
-
-class ErrorResponse implements ApiResponse {
-  final String message;
-  final int code;
-  ErrorResponse(this.message, this.code);
-}
-
-ApiResponse parseApiResponse(Map<String, dynamic> json) => switch (json) {
-  {'status': 'ok', 'data': Map<String, dynamic> data} => SuccessResponse(data),
-  {'status': 'error', 'message': String msg, 'code': int code} =>
-    ErrorResponse(msg, code),
-  _ => throw FormatException('Invalid or unrecognized API response: $json'),
-};
-```
+construct `sealed` class hierarchies. See
+[examples/json_patterns.dart](examples/json_patterns.dart) for an executable
+implementation demonstrating tagged `ApiResponse` parsing into `SuccessResponse`
+and `ErrorResponse`.
 
 ### Nested JSON Validation and Optional Fields
 Use nested Map and List patterns to validate required schema structure and
-extract collections in a single step (see
-[examples/json_patterns.dart](examples/json_patterns.dart)).
+extract collections in a single step. See
+[examples/json_patterns.dart](examples/json_patterns.dart) for an executable
+implementation of `processUserPayload`.
 
 Map patterns check for key existence (`containsKey`). If an optional JSON key
 might be omitted entirely from the payload (rather than explicitly passed as
 `'key': null`), destructure required keys via the pattern and extract optional
-fields directly from the matched submap:
-
-```dart
-void processUserPayload(Map<String, dynamic> json) {
-  if (json case {
-    'id': String id,
-    'profile': {
-      'name': String name,
-      'email': String email,
-    } && final Map<String, dynamic> profile,
-    'tags': [String primaryTag, ...], // Matches at least 1 element, ignores rest
-  }) {
-    // Read optional/omitted fields directly from the validated submap
-    final avatarUrl = profile['avatarUrl'] as String?;
-    print('User $name ($id, $email, avatar: $avatarUrl) - Primary tag: $primaryTag');
-  } else {
-    throw FormatException('Malformed user payload structure: $json');
-  }
-}
-```
+fields directly from the matched submap.
 
 ### Algebraic Data Types (Sealed Classes)
 Use Object patterns with switch expressions to handle family types exhaustively.
