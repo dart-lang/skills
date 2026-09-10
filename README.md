@@ -41,7 +41,7 @@ Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for more information.
 | Skill | Description | Example prompt |
 |---|---|---|
 | [dart-add-unit-test](skills/dart-add-unit-test/SKILL.md) | Write and organize unit tests for functions, methods, and classes using `package:test`. Use when creating new logic or fixing bugs to ensure code remains correct and regression-free. | Add a unit test for the Point class. |
-| [dart-build-cli-app](skills/dart-build-cli-app/SKILL.md) | Entrypoint structure, exit codes, cross-platform scripts. Use when building command line utilities, scripts, or applications. | Create a basic CLI app structure with argument parsing |
+| [dart-build-cli-app](skills/dart-build-cli-app/SKILL.md) | Architectural patterns, entrypoint structure, exit codes, stream routing, and subprocess spawning for Dart command-line interface (CLI) applications. | Create a production CLI app structure with CommandRunner and clean exit codes |
 | [dart-collect-coverage](skills/dart-collect-coverage/SKILL.md) | Collect coverage using the coverage packge and create an LCOV report | Collect test coverage |
 | [dart-setup-ffi-assets](skills/dart-setup-ffi-assets/SKILL.md) | Guides agents in compiling and packaging C/C++ source code into dynamic/static libraries using Dart's Native Assets hook system. Covers local toolchain setup, secure download orchestration with cryptographic validation, and advanced tree-shaking linkage. | Setup native assets and compile C code with build/link hooks. |
 | [dart-fix-runtime-errors](skills/dart-fix-runtime-errors/SKILL.md) | Uses get_runtime_errors and lsp to fetch an active stack trace, locate the failing line, apply a fix, and verify resolution via hot_reload. | Fix the NullPointer error in the user profile service. |
