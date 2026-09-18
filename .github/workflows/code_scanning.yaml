@@ -1,0 +1,64 @@
+name: Code Scanning
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'repo_tool/**'
+      - '.github/workflows/code_scanning.yaml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'skills/**'
+      - 'repo_tool/**'
+      - '.github/workflows/code_scanning.yaml'
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+
+defaults:
+  run:
+    working-directory: repo_tool
+
+jobs:
+  sarif_scan:
+    name: skills_lint (SARIF)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+
+      - name: Install dependencies
+        run: dart pub get
+
+      # skills_lint reads repo_tool/skills_lint.yaml, which points at the
+      # repository's skills/ directory. It exits with code 1 if lint violations
+      # are found and 0 if clean. continue-on-error allows the workflow to
+      # proceed to upload the SARIF report to GitHub Code Scanning before
+      # failing the job.
+      - name: Generate SARIF report
+        id: lint
+        continue-on-error: true
+        run: dart run skills_lint --format=sarif > "${GITHUB_WORKSPACE}/skills-lint.sarif"
+
+      # Upload SARIF findings to GitHub Code Scanning. Skip upload if setup failed
+      # before lint generation ran, or on fork PRs where security-events: write is unavailable.
+      - name: Upload SARIF report to GitHub Code Scanning
+        if: ${{ !cancelled() && steps.lint.conclusion != 'skipped' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: github/codeql-action/upload-sarif@faaca9a8f6edddba5725ffe5adefdab6669a2eca # v3.38.0
+        with:
+          sarif_file: skills-lint.sarif
+          category: skills_lint
+
+      # Fail the job if skills_lint detected any lint violations or encountered an error.
+      - name: Check linter status
+        if: steps.lint.outcome != 'success'
+        run: |
+          echo "skills_lint detected lint violations or failed with an error."
+          exit 1
