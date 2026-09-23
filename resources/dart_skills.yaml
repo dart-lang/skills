@@ -46,7 +46,7 @@
         *   **Logical-or Patterns (`||`):** Allow multiple cases to share a body or a guard in switch expressions or statements.
         *   **Relational and Logical-and Patterns (`>=`, `<=`, `&&`):** Match if a value falls within a specified range.
         *   **Record Patterns:** Match if an object is a record with specific fields, and can assign those fields to variables.
-        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields.
+        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields. Use rest elements (`['prefix', ...final rest]` or `[..., final parent, _]`) to match prefixes, extract suffixes, or slice tails from `uri.pathSegments`, `p.split(path)`, and `String.split()` results without manual `.length` checks, `.first`, or `.skip(1)`. When splitting strings by a delimiter (`s.split('?')`), match a 2-element head (`[final first, final second, ...final rest]`) to ensure the delimiter was present.
         *   **Map Patterns:** Useful for destructuring key-value pairs in deserialized data.
         *   **Variable Patterns:** Declare new local variables when a pattern matches and destructures a value.
         *   **Wildcard Patterns (`_`):** Use as a placeholder to ignore parts of a matched value. In list patterns, a rest element can also be used.
@@ -54,8 +54,10 @@
         *   **Null-assert Patterns (`!`):** Match if the object is not null, permitting non-null values to flow through but throwing if the matched value is null.
         *   **Parenthesized Patterns:** Control pattern precedence.
 
-    4.  **Implement Case Bodies:**
+    4.  **Implement Case Bodies & Respect Grammar Boundaries:**
         *   For switch expressions, each case must have a single expression as its body, and there is no implicit fallthrough for empty cases.
+        *   Because `<expr> case <pattern>` is a control-flow `caseClause` (valid only inside `if`, `for`, or `while` headers) and not a standalone boolean expression, use a switch expression (`switch (list) { ['a', ...] => true, _ => false }`) or inline `if (list case ['a', ...])` when evaluating a boolean condition.
+        *   When checking single-element membership against 5 or more flat constant literals without tail binding, prefer `const Set.contains` over long `||` pattern chains.
         *   For switch statements, empty cases can fall through to the next case, allowing cases to share a body. `break` can be used for an empty case that does not fall through, and `continue` with a label can be used for non-sequential fall-through.
 
     5.  **Add Guard Clauses (Optional):**

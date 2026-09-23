@@ -4,13 +4,13 @@ description: >-
   Applies Dart 3 pattern matching, switch expressions, and destructuring
   idiomatically to validate data schemas, handle algebraic data types, and
   decompose control flow. Use when refactoring complex if-else chains,
-  parsing polymorphic JSON or API responses, destructuring Records or Maps, or
-  enforcing exhaustiveness on sealed classes. Don't use for simple boolean
-  conditions, single-variable type promotion (use `is`), or basic collection
-  filtering.
+  parsing polymorphic JSON or API responses, destructuring Lists, URI/path
+  segments, String.split() tokens, Records, or Maps, or enforcing exhaustiveness
+  on sealed classes. Don't use for simple boolean conditions, single-variable
+  type promotion (use `is`), or basic collection filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Sun, 06 Sep 2026 06:43:00 GMT
+  last_modified: Wed, 23 Sep 2026 22:10:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -27,6 +27,7 @@ metadata:
 Apply specific pattern types based on the data structure and desired outcome. Follow these conditional guidelines:
 
 *   **If validating and extracting from deserialized data (e.g., JSON):** Use Map, List, and Object patterns to validate schema structure and destructure properties in a single step.
+*   **If inspecting URL/path segments (`uri.pathSegments`, `p.split(path)`) or `String.split()` tokens:** Use List patterns with rest elements (`['api', 'comments', ...]`, `['assets', ...final rest]`, `[..., final parent, _]`, `[final first, final second, ...final rest]`) instead of manual `.length` checks, `.first`, `.skip(1)`, or `length - N` index arithmetic.
 *   **If handling polymorphic payloads or responses:** Use `switch` expressions over map discriminant keys to deserialize into `sealed` class hierarchies.
 *   **If handling multiple return values:** Use Record patterns to destructure fields directly into local variables.
 *   **If executing type-specific behavior (Algebraic Data Types):** Use Object patterns combined with `sealed` classes to ensure exhaustiveness.
@@ -142,15 +143,58 @@ Use standard property access (`user.name`) rather than object pattern destructur
 ### 6. Avoid `if-case` for Standalone Scalar Comparisons
 Use standard boolean operators (`if (code >= 200 && code < 300)`) instead of `if (code case >= 200 && < 300)` for standalone conditions. Reserve relational patterns for multi-arm `switch` tables.
 
+### 7. Use `switch` Expressions or Inline `if-case` for Boolean Returns (`case` Grammar Boundary)
+In Dart 3 grammar, `<expr> case <pattern> [when <guard>]` is a control-flow `caseClause` valid only inside `if (...)`, `for (...; ...; ...)`, or `while (...)` headers—it is not a general boolean expression like `is`.
+
+*   **Prefer:**
+    ```dart
+    // ✅ Inline `if (segments case ['api', 'comments', ...])` at the branch site,
+    // or use a switch expression when a standalone bool return is needed:
+    bool isCommentsApiRoute(List<String> segments) => switch (segments) {
+      ['api', 'comments', ...] => true,
+      _ => false,
+    };
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ Compile error: 'case' cannot be used as a standalone expression
+    bool isCommentsApiRoute(List<String> segments) =>
+        segments case ['api', 'comments', ...];
+    ```
+
+### 8. Prefer `const Set.contains` over Long `||` Pattern Chains (`>= 5` Flat Literals)
+When checking single-element membership against five or more constant literals without tail destructuring, use `const Set.contains` ($O(1)$ lookup, zero branching complexity). Reserve `||` inside list patterns for small sets (2–3 items) or when combining heterogeneous list shapes (such as `['status' || 'static', ...] || ['api', 'v1', 'version']`).
+
+*   **Prefer:**
+    ```dart
+    // ✅ Constant set lookup for flat literal membership
+    const allowedPrefixes = {
+      'status', 'chat', 'assets', 'static', 'api', 'documents', 'r',
+    };
+    if (segments.isNotEmpty && allowedPrefixes.contains(segments.first)) {
+      handleAllowedRoute(segments);
+    }
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ High branching complexity for flat constant membership
+    if (segments case [
+      'status' || 'chat' || 'assets' || 'static' || 'api' || 'documents' || 'r',
+      ...,
+    ]) {
+      handleAllowedRoute(segments);
+    }
+    ```
+
 ## Workflows
 
 ### Task Progress: Implementing Pattern Matching
 Copy this checklist to track progress when implementing complex pattern matching logic:
 
-- [ ] Identify the data structure being evaluated (JSON, Record, Class, Enum).
+- [ ] Identify the data structure being evaluated (JSON, List/Segments, Record, Class, Enum).
 - [ ] Select the appropriate switch construct (Expression for values, Statement for side-effects).
 - [ ] Define the required patterns (Object, Map, List, Record).
-- [ ] Extract required data using Variable patterns (`var x`, `:var y`).
+- [ ] Extract required data using Variable patterns (`var x`, `:var y`, `...final rest`).
 - [ ] Apply Guard clauses (`when condition`) for logic that cannot be expressed via patterns.
 - [ ] Handle unmatched cases using a Wildcard (`_`) or `default` clause (if not using a sealed class).
 - [ ] Run static analyzer for exhaustiveness and dead code (`dart analyze`).
@@ -188,6 +232,31 @@ Map patterns check for key existence (`containsKey`). If an optional JSON key
 might be omitted entirely from the payload (rather than explicitly passed as
 `'key': null`), destructure required keys via the pattern and extract optional
 fields directly from the matched submap.
+
+### List, Path Segment, and `String.split()` Destructuring
+Use List patterns with rest elements (`...` and `...final rest`) to match
+prefixes, extract suffixes, and validate tokenized strings without manual
+`.length` checks, `.first` calls (which throw `StateError` on empty lists), or
+`.skip(1)` slicing. See
+[examples/list_and_split_patterns.dart](examples/list_and_split_patterns.dart)
+for executable implementations of:
+
+*   **Multi-segment prefix matching (`['api', 'comments', ...]`)**: Replaces
+    `segments.length >= 2 && segments.first == 'api' && segments[1] == 'comments'`.
+*   **Prefix matching with tail slicing (`['assets', ...final rest]`)**: Binds
+    the remaining segments into `rest`, which is immediately in scope inside a
+    `when` guard clause (`when rest.isNotEmpty && !rest.contains('..')`).
+*   **Suffix and penultimate element extraction (`[..., final parent, _]`)**:
+    Extracts parent directory or collection names without `segments.length - 2`
+    index arithmetic.
+*   **Fixed-arity `.split()` validation (`[!= 'ff', final id, final span, ...]`)**:
+    Combines arity validation, relational negation (`!=`), variable binding, and
+    `when` length guards in a single step.
+*   **Ensuring delimiter presence in `String.split()` (`[final base, final firstQuery, ...final rest]`)**:
+    Calling `'section'.split('?')` on a string without `'?'` returns a
+    single-element list `['section']`. Matching a 2-element head before
+    `...final rest` guarantees that at least one delimiter was present before
+    re-joining (`[firstQuery, ...rest].join('?')`).
 
 ### Algebraic Data Types (Sealed Classes)
 Use Object patterns with switch expressions to handle family types exhaustively.
