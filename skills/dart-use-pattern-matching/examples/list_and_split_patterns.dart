@@ -68,6 +68,15 @@ String parentCollectionName(List<String> segments) => switch (segments) {
       _ => (fragment, const <String, String>{}),
     };
 
+/// Combines list destructuring with `Set.contains` in a `when` guard.
+bool isAllowedTopLevelRoute(
+  List<String> segments,
+  Set<String> allowedPrefixes,
+) => switch (segments) {
+  [final first, ...] when allowedPrefixes.contains(first) => true,
+  _ => false,
+};
+
 void main() {
   print('Comments route: ${isCommentsApiRoute(['api', 'comments', '42'])}');
   print(
@@ -80,4 +89,7 @@ void main() {
     'Traceparent: ${parseTraceparent('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01')}',
   );
   print('Fragment: ${parseFragment('overview?tab=metrics&filter=a?b')}');
+  print(
+    'Allowed route: ${isAllowedTopLevelRoute(['docs', 'intro'], const {'api', 'docs', 'status'})}',
+  );
 }

@@ -162,27 +162,22 @@ In Dart 3 grammar, `<expr> case <pattern> [when <guard>]` is a control-flow `cas
         segments case ['api', 'comments', ...];
     ```
 
-### 8. Prefer `const Set.contains` over Long `||` Pattern Chains (`>= 5` Flat Literals)
-When checking single-element membership against five or more constant literals without tail destructuring, use `const Set.contains` ($O(1)$ lookup, zero branching complexity). Reserve `||` inside list patterns for small sets (2–3 items) or when combining heterogeneous list shapes (such as `['status' || 'static', ...] || ['api', 'v1', 'version']`).
+### 8. Combine List Destructuring with `Set.contains` in `when` Guards
+When checking whether an element belongs to an existing `Set` (or large constant collection), bind the element in the list pattern and call `.contains(...)` in the `when` guard (`case [final first, ...] when allowedPrefixes.contains(first)`). This avoids both manual `.isNotEmpty && ... .first` index checks and sprawling `||` literal chains.
 
 *   **Prefer:**
     ```dart
-    // ✅ Constant set lookup for flat literal membership
-    const allowedPrefixes = {
-      'status', 'chat', 'assets', 'static', 'api', 'documents', 'r',
-    };
-    if (segments.isNotEmpty && allowedPrefixes.contains(segments.first)) {
-      handleAllowedRoute(segments);
+    // ✅ List pattern binds the element safely and checks Set membership in `when`
+    if (segments case [final first, ...final rest]
+        when allowedPrefixes.contains(first)) {
+      handleAllowedRoute(first, rest);
     }
     ```
 *   **Avoid:**
     ```dart
-    // ❌ High branching complexity for flat constant membership
-    if (segments case [
-      'status' || 'chat' || 'assets' || 'static' || 'api' || 'documents' || 'r',
-      ...,
-    ]) {
-      handleAllowedRoute(segments);
+    // ❌ Manual .isNotEmpty / .first guard and .skip(1) allocation
+    if (segments.isNotEmpty && allowedPrefixes.contains(segments.first)) {
+      handleAllowedRoute(segments.first, segments.skip(1).toList());
     }
     ```
 
