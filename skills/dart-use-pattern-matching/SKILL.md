@@ -181,6 +181,45 @@ When checking whether an element belongs to an existing `Set` (or large constant
     }
     ```
 
+### 9. Prefer `is` Type Promotion over `if-case` for Single Variables
+When checking the type of a single local variable or parameter without destructuring its fields, use standard `is` type promotion instead of `if (x case final Foo f)`, which introduces an unnecessary shadow alias variable.
+
+*   **Prefer:**
+    ```dart
+    // ✅ Promotes `key` directly in-place without extra alias variables
+    if (key is String && value != null) {
+      processHeader(key, value);
+    }
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ Introduces unnecessary alias variable `k` for a simple type check
+    if (key case final String k when value != null) {
+      processHeader(k, value);
+    }
+    ```
+
+### 10. Consolidate Nullable Types (`T?`) in Switch Arms
+When a `switch` expression passes through both `null` and a matched type `T`, match the nullable type `T?` in a single arm rather than writing a separate `null => null` arm.
+
+*   **Prefer:**
+    ```dart
+    // ✅ Single nullable pattern arm handles both String and null
+    String? parseOptionalString(Object? value) => switch (value) {
+      final String? s => s,
+      _ => throw FormatException('Expected String or null, got $value'),
+    };
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ Redundant separate `null` arm
+    String? parseOptionalString(Object? value) => switch (value) {
+      final String s => s,
+      null => null,
+      _ => throw FormatException('Expected String or null, got $value'),
+    };
+    ```
+
 ## Workflows
 
 ### Task Progress: Implementing Pattern Matching

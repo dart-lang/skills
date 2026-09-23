@@ -77,6 +77,12 @@ bool isAllowedTopLevelRoute(
   _ => false,
 };
 
+/// Consolidates `String` and `null` into a single `final String? s` arm.
+String? parseOptionalString(Object? value) => switch (value) {
+  final String? s => s,
+  _ => throw FormatException('Expected String or null, got $value'),
+};
+
 void main() {
   print('Comments route: ${isCommentsApiRoute(['api', 'comments', '42'])}');
   print(
@@ -92,4 +98,5 @@ void main() {
   print(
     'Allowed route: ${isAllowedTopLevelRoute(['docs', 'intro'], const {'api', 'docs', 'status'})}',
   );
+  print('Optional string: ${parseOptionalString(null)}');
 }
