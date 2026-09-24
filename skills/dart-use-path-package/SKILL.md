@@ -60,13 +60,14 @@ metadata:
   false positives on partial substring names (e.g. `barfoo/`).
 
 ### Root and Directory Prefixes
-* **Prefer**: `if (p.split(path) case ['foo', ...final rest])` or `p.isWithin('foo', path)`
+* **Prefer**: `if (p.split(path) case ['foo', ...])` (or `case ['foo', ...final rest]` when extracting tail segments), or `p.isWithin('foo', path)`
 * **Avoid**: `path.startsWith('foo/')` or `p.split(path).first == 'foo'`
-* **Why**: String prefix matching fails on Windows separators and misses
-  relative prefix variants such as `./foo/`. Calling `.first` throws a
-  `StateError` on empty lists and requires separate `.skip(1)` slicing, whereas
-  list patterns safely check non-emptiness, match multi-segment prefixes, and
-  bind the remaining tail in a single step.
+* **Why**: String prefix matching fails on Windows separators (`foo\bar`). Calling
+  `p.split(path).first` throws a `StateError` on empty lists and requires
+  separate `.skip(1)` slicing, whereas list patterns safely check non-emptiness,
+  match multi-segment prefixes, and optionally bind `...final rest` in a single
+  step. When unnormalized relative prefixes like `./foo/bar` may appear, use
+  `p.isWithin('foo', path)` (or `p.split(p.normalize(path))`).
 
 ### File Extensions
 * **Prefer**: `p.extension(path) == '.wasm'`

@@ -1,25 +1,18 @@
-// Copyright (c) 2026, the Dart project authors. Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-/// Examples of Dart 3 list patterns for URI path segments, directory prefixes,
-/// suffix extraction, and `String.split` token parsing.
+/// Examples of Dart 3 list, path segment, and `String.split()` patterns.
 library;
 
 /// Matches a multi-segment route prefix (`['api', 'comments', ...]`).
 ///
-/// Because `<expr> case <pattern>` is a control-flow `caseClause` rather than a
-/// standalone boolean expression, use a `switch` expression when returning a
-/// `bool` value directly.
+/// Because `<expr> case <pattern>` is a control-flow `caseClause` (valid only
+/// inside `if`, `for`, or `while` headers) and not a standalone boolean
+/// expression, use a `switch` expression when returning a `bool` directly.
 bool isCommentsApiRoute(List<String> segments) => switch (segments) {
   ['api', 'comments', ...] => true,
   _ => false,
 };
 
-/// Matches a prefix and binds the remaining tail segments via `...final rest`.
-///
-/// Variables bound by `...final rest` are immediately in scope inside a `when`
-/// guard clause.
+/// Matches a prefix and extracts the remaining segments (`...final rest`) with
+/// a `when` guard checking the extracted tail.
 String? resolveAllowedAssetSubpath(List<String> segments) {
   if (segments case ['assets', ...final rest]
       when rest.isNotEmpty && !rest.contains('..')) {
@@ -28,20 +21,20 @@ String? resolveAllowedAssetSubpath(List<String> segments) {
   return null;
 }
 
-/// Extracts the penultimate segment (such as a parent collection or directory)
-/// using a leading rest pattern (`[..., final parent, _]`).
+/// Extracts the penultimate segment (`[..., final parent, _]`) without manual
+/// `segments.length >= 2` and `segments[segments.length - 2]` indexing.
 String parentCollectionName(List<String> segments) => switch (segments) {
-  [..., final parentCollection, _] => parentCollection,
+  [..., final parent, _] => parent,
   _ => '',
 };
 
-/// Parses a fixed-arity delimited header (`version-traceId-spanId-flags`) using
-/// relational negation (`!= 'ff'`) and length guards.
+/// Parses a fixed 4-element W3C `traceparent` header (`version-traceId-spanId-flags`)
+/// using list destructuring, relational negation (`!=`), and a `when` guard.
 ({String traceId, String spanId, bool sampled})? parseTraceparent(
   String header,
 ) {
   if (header.trim().split('-')
-      case [!= 'ff', final traceId, final spanId, final rawFlags, ...]
+      case [!= 'ff', final traceId, final spanId, final rawFlags]
       when traceId.length == 32 && spanId.length == 16) {
     final flags = int.tryParse(rawFlags, radix: 16) ?? 0;
     return (
@@ -53,35 +46,34 @@ String parentCollectionName(List<String> segments) => switch (segments) {
   return null;
 }
 
-/// Splits a URL fragment on `'?'` into its base path and query parameters.
+/// Splits a space-delimited command line into its command name and non-empty
+/// argument list.
 ///
-/// Calling `'section'.split('?')` on a string without `'?'` returns a
-/// single-element list `['section']`. Matching at least two elements
-/// (`[final base, final firstQuery, ...final rest]`) guarantees that at least
-/// one `'?'` delimiter was present before joining any additional `'?'` tokens.
-(String, Map<String, String>) parseFragment(String fragment) =>
-    switch (fragment.split('?')) {
-      [final base, final firstQuery, ...final rest] => (
-        base,
-        Uri.splitQueryString([firstQuery, ...rest].join('?')),
+/// Calling `'help'.split(' ')` on a string without spaces returns a
+/// single-element list `['help']`. Matching at least two elements
+/// (`[final command, final firstArg, ...final extraArgs]`) guarantees that at
+/// least one space delimiter was present.
+(String, List<String>)? parseCommandWithArgs(String line) =>
+    switch (line.trim().split(' ')) {
+      [final command, final firstArg, ...final extraArgs] => (
+        command,
+        [firstArg, ...extraArgs],
       ),
-      _ => (fragment, const <String, String>{}),
+      _ => null,
     };
 
-/// Combines list destructuring with `Set.contains` in a `when` guard.
-bool isAllowedTopLevelRoute(
+/// Combines list destructuring with `Set.contains` in a `when` guard to extract
+/// the matched top-level route segment and its remaining tail.
+(String, List<String>)? matchAllowedRoute(
   List<String> segments,
   Set<String> allowedPrefixes,
-) => switch (segments) {
-  [final first, ...] when allowedPrefixes.contains(first) => true,
-  _ => false,
-};
-
-/// Consolidates `String` and `null` into a single `final String? s` arm.
-String? parseOptionalString(Object? value) => switch (value) {
-  final String? s => s,
-  _ => throw FormatException('Expected String or null, got $value'),
-};
+) {
+  if (segments case [final first, ...final rest]
+      when allowedPrefixes.contains(first)) {
+    return (first, rest);
+  }
+  return null;
+}
 
 void main() {
   print('Comments route: ${isCommentsApiRoute(['api', 'comments', '42'])}');
@@ -94,9 +86,8 @@ void main() {
   print(
     'Traceparent: ${parseTraceparent('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01')}',
   );
-  print('Fragment: ${parseFragment('overview?tab=metrics&filter=a?b')}');
+  print('Command: ${parseCommandWithArgs('deploy --env prod --dry-run')}');
   print(
-    'Allowed route: ${isAllowedTopLevelRoute(['docs', 'intro'], const {'api', 'docs', 'status'})}',
+    'Allowed route: ${matchAllowedRoute(['docs', 'intro'], const {'api', 'docs', 'status'})}',
   );
-  print('Optional string: ${parseOptionalString(null)}');
 }

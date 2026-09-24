@@ -149,17 +149,13 @@ In Dart 3 grammar, `<expr> case <pattern> [when <guard>]` is a control-flow `cas
 *   **Prefer:**
     ```dart
     // ✅ Inline `if (segments case ['api', 'comments', ...])` at the branch site,
-    // or use a switch expression when a standalone bool return is needed:
-    bool isCommentsApiRoute(List<String> segments) => switch (segments) {
-      ['api', 'comments', ...] => true,
-      _ => false,
-    };
+    // or use a switch expression when returning a bool (see examples/list_and_split_patterns.dart):
+    return switch (segments) { ['api', 'comments', ...] => true, _ => false };
     ```
 *   **Avoid:**
     ```dart
     // ❌ Compile error: 'case' cannot be used as a standalone expression
-    bool isCommentsApiRoute(List<String> segments) =>
-        segments case ['api', 'comments', ...];
+    return segments case ['api', 'comments', ...];
     ```
 
 ### 8. Combine List Destructuring with `Set.contains` in `when` Guards
@@ -179,45 +175,6 @@ When checking whether an element belongs to an existing `Set` (or large constant
     if (segments.isNotEmpty && allowedPrefixes.contains(segments.first)) {
       handleAllowedRoute(segments.first, segments.skip(1).toList());
     }
-    ```
-
-### 9. Prefer `is` Type Promotion over `if-case` for Single Variables
-When checking the type of a single local variable or parameter without destructuring its fields, use standard `is` type promotion instead of `if (x case final Foo f)`, which introduces an unnecessary shadow alias variable.
-
-*   **Prefer:**
-    ```dart
-    // ✅ Promotes `key` directly in-place without extra alias variables
-    if (key is String && value != null) {
-      processHeader(key, value);
-    }
-    ```
-*   **Avoid:**
-    ```dart
-    // ❌ Introduces unnecessary alias variable `k` for a simple type check
-    if (key case final String k when value != null) {
-      processHeader(k, value);
-    }
-    ```
-
-### 10. Consolidate Nullable Types (`T?`) in Switch Arms
-When a `switch` expression passes through both `null` and a matched type `T`, match the nullable type `T?` in a single arm rather than writing a separate `null => null` arm.
-
-*   **Prefer:**
-    ```dart
-    // ✅ Single nullable pattern arm handles both String and null
-    String? parseOptionalString(Object? value) => switch (value) {
-      final String? s => s,
-      _ => throw FormatException('Expected String or null, got $value'),
-    };
-    ```
-*   **Avoid:**
-    ```dart
-    // ❌ Redundant separate `null` arm
-    String? parseOptionalString(Object? value) => switch (value) {
-      final String s => s,
-      null => null,
-      _ => throw FormatException('Expected String or null, got $value'),
-    };
     ```
 
 ## Workflows
@@ -269,28 +226,12 @@ fields directly from the matched submap.
 
 ### List, Path Segment, and `String.split()` Destructuring
 Use List patterns with rest elements (`...` and `...final rest`) to match
-prefixes, extract suffixes, and validate tokenized strings without manual
-`.length` checks, `.first` calls (which throw `StateError` on empty lists), or
-`.skip(1)` slicing. See
+prefixes, extract penultimate/suffix elements (`[..., final parent, _]`),
+validate fixed-arity `.split()` tokens (`[!= 'ff', final id, final span, final flags]`),
+and ensure delimiter presence (`[final command, final firstArg, ...final extraArgs]`,
+since `'help'.split(' ')` returns a 1-element list `['help']`). See
 [examples/list_and_split_patterns.dart](examples/list_and_split_patterns.dart)
-for executable implementations of:
-
-*   **Multi-segment prefix matching (`['api', 'comments', ...]`)**: Replaces
-    `segments.length >= 2 && segments.first == 'api' && segments[1] == 'comments'`.
-*   **Prefix matching with tail slicing (`['assets', ...final rest]`)**: Binds
-    the remaining segments into `rest`, which is immediately in scope inside a
-    `when` guard clause (`when rest.isNotEmpty && !rest.contains('..')`).
-*   **Suffix and penultimate element extraction (`[..., final parent, _]`)**:
-    Extracts parent directory or collection names without `segments.length - 2`
-    index arithmetic.
-*   **Fixed-arity `.split()` validation (`[!= 'ff', final id, final span, ...]`)**:
-    Combines arity validation, relational negation (`!=`), variable binding, and
-    `when` length guards in a single step.
-*   **Ensuring delimiter presence in `String.split()` (`[final base, final firstQuery, ...final rest]`)**:
-    Calling `'section'.split('?')` on a string without `'?'` returns a
-    single-element list `['section']`. Matching a 2-element head before
-    `...final rest` guarantees that at least one delimiter was present before
-    re-joining (`[firstQuery, ...rest].join('?')`).
+for executable implementations.
 
 ### Algebraic Data Types (Sealed Classes)
 Use Object patterns with switch expressions to handle family types exhaustively.
