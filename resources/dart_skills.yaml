@@ -46,7 +46,7 @@
         *   **Logical-or Patterns (`||`):** Allow multiple cases to share a body or a guard in switch expressions or statements.
         *   **Relational and Logical-and Patterns (`>=`, `<=`, `&&`):** Match if a value falls within a specified range.
         *   **Record Patterns:** Match if an object is a record with specific fields, and can assign those fields to variables.
-        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields.
+        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields. Use rest elements (`['prefix', ...final rest]` or `[..., final parent, _]`) to match prefixes, extract suffixes, or slice tails from `uri.pathSegments`, `p.split(path)`, and `String.split()` results without manual `.length` checks, `.first`, or `.skip(1)`.
         *   **Map Patterns:** Useful for destructuring key-value pairs in deserialized data.
         *   **Variable Patterns:** Declare new local variables when a pattern matches and destructures a value.
         *   **Wildcard Patterns (`_`):** Use as a placeholder to ignore parts of a matched value. In list patterns, a rest element can also be used.
