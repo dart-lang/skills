@@ -10,7 +10,7 @@ description: >-
   type promotion (use `is`), or basic collection filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Wed, 23 Sep 2026 22:10:00 GMT
+  last_modified: Mon, 12 Oct 2026 22:05:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -30,6 +30,7 @@ Apply specific pattern types based on the data structure and desired outcome. Fo
 *   **If inspecting URL/path segments (`uri.pathSegments`, `p.split(path)`) or `String.split()` tokens:** Use List patterns with rest elements (`['api', 'comments', ...]`, `['assets', ...final rest]`, `[..., final parent, _]`) instead of manual `.length` checks, `.first`, `.skip(1)`, or `length - N` index arithmetic.
 *   **If handling polymorphic payloads or responses:** Use `switch` expressions over map discriminant keys to deserialize into `sealed` class hierarchies.
 *   **If handling multiple return values:** Use Record patterns to destructure fields directly into local variables.
+*   **If unpacking multiple fields from an object or `MapEntry`:** Use Object patterns (`final Spec(:field1, :field2!) = spec;`, `for (final MapEntry(:key, :value) in map.entries)`) to bind local variables and promote nullable fields in a single declaration.
 *   **If executing type-specific behavior (Algebraic Data Types):** Use Object patterns combined with `sealed` classes to ensure exhaustiveness.
 *   **If matching numeric ranges or conditions:** Use Relational (`>=`, `<=`) and Logical-and (`&&`) patterns within switch arms.
 *   **If multiple cases share logic:** Use Logical-or (`||`) patterns to share a single case body or guard clause.
@@ -137,8 +138,29 @@ Do not use `if-case` in loops or deserialization to filter elements if malformed
 *   Use `if (x is T)` instead of a `switch` statement with only 1 case and `default: break;`.
 *   Use standard conditional ternary operators (`condition ? a : b`) instead of `switch (condition) { true => a, false => b }`.
 
-### 5. Avoid Gratuitous Object Destructuring
-Use standard property access (`user.name`) rather than object pattern destructuring (`final User(:name) = user;`) when reading a single property on a known non-null instance.
+### 5. Use Object Destructuring for Multi-Field Unpacking, Not Single Properties
+Use object or record pattern destructuring when extracting multiple fields into local variables, eliminating a single-use intermediate variable, or promoting nullable fields (`:field!`) in one step. Keep standard property access (`user.name`) when reading a single property, when a long class name with renamed getters wraps a 2-field extraction across 3+ lines, or when one of the target variables is mutable (`var`) or assigned to an outer scope.
+
+*   **Prefer:**
+    ```dart
+    // ✅ Unpacks multiple fields and asserts non-nullability in one declaration
+    final RunSpec(:String target, :DeviceConfig device!, :bool verbose) = spec;
+
+    // ✅ Unpacks key and value directly in map entry loops
+    for (final MapEntry(:key, :value) in headers.entries) {
+      request.setHeader(key, value);
+    }
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ Repetitive multi-line property extraction
+    final String target = spec.target;
+    final DeviceConfig device = spec.device!;
+    final bool verbose = spec.verbose;
+
+    // ❌ Gratuitous object destructuring for a single property
+    final User(:name) = user;
+    ```
 
 ### 6. Avoid `if-case` for Standalone Scalar Comparisons
 Use standard boolean operators (`if (code >= 200 && code < 300)`) instead of `if (code case >= 200 && < 300)` for standalone conditions. Reserve relational patterns for multi-arm `switch` tables.
