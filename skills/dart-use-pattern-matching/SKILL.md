@@ -139,27 +139,23 @@ Do not use `if-case` in loops or deserialization to filter elements if malformed
 *   Use standard conditional ternary operators (`condition ? a : b`) instead of `switch (condition) { true => a, false => b }`.
 
 ### 5. Use Object Destructuring for Multi-Field Unpacking, Not Single Properties
-Use object or record pattern destructuring when extracting multiple fields into local variables, eliminating a single-use intermediate variable, or promoting nullable fields (`:field!`) in one step. Keep standard property access (`user.name`) when reading a single property, when a long class name with renamed getters wraps a 2-field extraction across 3+ lines, or when one of the target variables is mutable (`var`) or assigned to an outer scope.
+Use object, record, or `MapEntry(:key, :value)` destructuring when extracting 3+ fields, eliminating a single-use intermediate variable, or promoting nullable fields (`:field!`). Keep standard property/element access when:
+*   Reading a single property (`user.name`, or `final CpuCallFrame(:url, :line) = node.callFrame;` rather than nesting `ProfileNode(callFrame: ...)`).
+*   A long class name with renamed getters wraps a 2-field unpack across 3+ lines.
+*   Any target variable is assigned to an outer-scoped variable (e.g., `db = res.$1;` before `finally` — `final (db, ...)` shadows outer `db`) or mixes `final` and mutable `var` locals.
+*   Reading `.first` and `.last` on a list that may have length 1 (`[first, ..., last]` requires `length >= 2`; do not replace with multi-branch `if-case`).
 
 *   **Prefer:**
     ```dart
     // ✅ Unpacks multiple fields and asserts non-nullability in one declaration
-    final RunSpec(:String target, :DeviceConfig device!, :bool verbose) = spec;
-
-    // ✅ Unpacks key and value directly in map entry loops
-    for (final MapEntry(:key, :value) in headers.entries) {
-      request.setHeader(key, value);
-    }
+    final RunSpec(:target, :device!, :verbose) = spec;
     ```
 *   **Avoid:**
     ```dart
     // ❌ Repetitive multi-line property extraction
-    final String target = spec.target;
-    final DeviceConfig device = spec.device!;
-    final bool verbose = spec.verbose;
-
-    // ❌ Gratuitous object destructuring for a single property
-    final User(:name) = user;
+    final target = spec.target;
+    final device = spec.device!;
+    final verbose = spec.verbose;
     ```
 
 ### 6. Avoid `if-case` for Standalone Scalar Comparisons
