@@ -138,9 +138,11 @@ Do not use `if-case` in loops or deserialization to filter elements if malformed
 *   Use `if (x is T)` instead of a `switch` statement with only 1 case and `default: break;`.
 *   Use standard conditional ternary operators (`condition ? a : b`) instead of `switch (condition) { true => a, false => b }`.
 
-### 5. Use Object Destructuring for Multi-Field Unpacking, Not Single Properties
-Use object or record destructuring when extracting 3+ fields, iterating `MapEntry(:key, :value)` in `map.entries` loops, eliminating a single-use intermediate variable, or promoting nullable fields (`:field!`). Keep standard property/element access when:
-*   Reading a single property (`user.name`, or `final CpuCallFrame(:url, :line) = node.callFrame;` rather than nesting `ProfileNode(callFrame: ...)`).
+### 5. Use Object Destructuring for High-Reuse Unpacking, Not Single-Use Aliases
+Use object or record destructuring when unpacking return values (`final Spec(:target, :device) = parse();`), iterating `MapEntry(:key, :value)` in loops, promoting nullable fields (`:field!`), or when extracting fields that are reused multiple times across a dense method. Keep standard property/element access (`config.field`) when:
+*   Reading a single property (e.g., `user.name`).
+*   Fields are single-use or immediately passed through to another constructor. Creating local aliases adds ceremony without reducing cognitive load.
+*   Destructuring an existing local variable would force you to import new types solely to satisfy explicit type lints (`specify_nonobvious_local_variable_types`).
 *   A long class name with renamed getters wraps a 2-field unpack across 3+ lines.
 *   Any target variable is assigned to an outer-scoped variable (e.g., `db = res.$1;` before `finally` — `final (db, ...)` shadows outer `db`) or mixes `final` and mutable `var` locals.
 *   Reading `.first` and `.last` on a list that may have length 1 (`[first, ..., last]` requires `length >= 2`; do not replace with multi-branch `if-case`).
