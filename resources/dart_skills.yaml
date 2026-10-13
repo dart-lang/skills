@@ -70,7 +70,7 @@
 
     8.  **Destructure and Assign Variables:**
         *   When a pattern matches, it can destructure the value and bind it to new local variables.
-        *   Use object or record pattern declarations (`final Spec(:field1, :field2!) = spec;`, `for (final MapEntry(:key, :value) in map.entries)`) when unpacking multiple fields, eliminating a single-use intermediate variable, or promoting nullable fields, rather than writing repetitive single-field `final` assignments. Keep standard property access (`user.name`) when reading a single property or when one of the target variables is mutable (`var`) or assigned to an outer scope.
+        *   Use object or record pattern declarations (`final Spec(:field1, :field2!) = spec;`, `for (final MapEntry(:key, :value) in map.entries)`) when unpacking 3+ fields used across multiple statements, iterating `map.entries` loops, eliminating a single-use intermediate variable, or promoting nullable fields, rather than writing repetitive single-field `final` assignments. Keep standard property access (`user.name`) when reading a single property, when unpacking 1–2 fields in a short getter/method or passing fields straight into a single constructor/call, when explicit local type annotations (`specify_nonobvious_local_variable_types`) require extra imports for marginal (1–2x) reuse, or when a target variable is mutable (`var`) or assigned to an outer scope.
         *   Use a variable assignment pattern on the left side of an assignment to destructure an object and assign values to existing variables instead of binding new ones. This can be used to swap variable values.
   resources:
     - https://raw.githubusercontent.com/dart-lang/language/refs/heads/main/accepted/3.0/patterns/feature-specification.md
