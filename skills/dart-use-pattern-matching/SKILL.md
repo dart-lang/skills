@@ -139,7 +139,7 @@ Do not use `if-case` in loops or deserialization to filter elements if malformed
 *   Use standard conditional ternary operators (`condition ? a : b`) instead of `switch (condition) { true => a, false => b }`.
 
 ### 5. Use Object Destructuring for Multi-Field Unpacking, Not Single Properties
-Use object, record, or `MapEntry(:key, :value)` destructuring when extracting 3+ fields, eliminating a single-use intermediate variable, or promoting nullable fields (`:field!`). Keep standard property/element access when:
+Use object or record destructuring when extracting 3+ fields, iterating `MapEntry(:key, :value)` in `map.entries` loops, eliminating a single-use intermediate variable, or promoting nullable fields (`:field!`). Keep standard property/element access when:
 *   Reading a single property (`user.name`, or `final CpuCallFrame(:url, :line) = node.callFrame;` rather than nesting `ProfileNode(callFrame: ...)`).
 *   A long class name with renamed getters wraps a 2-field unpack across 3+ lines.
 *   Any target variable is assigned to an outer-scoped variable (e.g., `db = res.$1;` before `finally` — `final (db, ...)` shadows outer `db`) or mixes `final` and mutable `var` locals.
