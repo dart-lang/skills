@@ -12,12 +12,16 @@ import 'package:skills_lint/skills_lint.dart';
 import 'package:test/test.dart';
 
 const String _configFilePath = 'skills_lint.yaml';
+const String _expectedSkillsShSchema =
+    'https://skills.sh/schemas/skills.sh.json';
 
 void main() {
-  test('Validate skills.sh.json and README.md', () {
+  test('skills.sh.json and README.md match skills in skills/', () {
     final repoRoot = Directory.current.path.endsWith('repo_tool')
         ? Directory.current.parent
         : Directory.current;
+
+    // 1. Collect all skill directories in skills/.
     final skillsDir = Directory(p.join(repoRoot.path, 'skills'));
     expect(skillsDir.existsSync(), isTrue);
 
@@ -29,17 +33,25 @@ void main() {
         .toSet();
     expect(actualSkills, isNotEmpty);
 
+    // 2. Parse skills.sh.json and validate its local properties (this performs
+    // a string comparison against _expectedSkillsShSchema and makes no HTTP or
+    // network calls).
     final skillsShFile = File(p.join(repoRoot.path, 'skills.sh.json'));
     expect(skillsShFile.existsSync(), isTrue);
 
     final skillsShJson =
         jsonDecode(skillsShFile.readAsStringSync()) as Map<String, Object?>;
-    expect(
-      skillsShJson[r'$schema'],
-      'https://skills.sh/schemas/skills.sh.json',
-    );
-    expect(skillsShJson['notGrouped'], 'bottom');
+    expect(skillsShJson[r'$schema'], _expectedSkillsShSchema);
 
+    // Setting notGrouped to "bottom" pushes any skill not listed in "groups"
+    // (such as previously deleted or renamed skill slugs retained in skills.sh
+    // install telemetry) into an "Other skills" section at the bottom of the
+    // skills.sh repository page.
+    expect(skillsShJson['notGrouped'], 'bottom');
+    expect(skillsShJson.keys.last, 'notGrouped');
+
+    // 3. Verify each group has a 1-3 word title, a non-empty description, and
+    // unique skill identifiers that match actualSkills.
     final groups = (skillsShJson['groups'] as List<Object?>)
         .cast<Map<String, Object?>>();
     expect(groups, isNotEmpty);
@@ -73,6 +85,8 @@ void main() {
 
     expect(groupedSkills, equals(actualSkills));
 
+    // 4. Verify the Available Skills table in README.md lists the exact same
+    // set of skills.
     final readmeFile = File(p.join(repoRoot.path, 'README.md'));
     expect(readmeFile.existsSync(), isTrue);
     final readmeMatches = RegExp(

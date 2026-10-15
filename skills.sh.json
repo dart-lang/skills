@@ -1,6 +1,5 @@
 {
   "$schema": "https://skills.sh/schemas/skills.sh.json",
-  "notGrouped": "bottom",
   "groups": [
     {
       "title": "Language & Docs",
@@ -41,5 +40,6 @@
         "dart-setup-ffi-assets"
       ]
     }
-  ]
+  ],
+  "notGrouped": "bottom"
 }
