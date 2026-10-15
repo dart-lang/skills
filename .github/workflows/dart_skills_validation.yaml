@@ -4,12 +4,16 @@ permissions: read-all
 on:
   pull_request:
     paths:
+      - 'README.md'
+      - 'skills.sh.json'
       - 'skills/**'
       - 'repo_tool/**'
       - '.github/workflows/dart_skills_validation.yaml'
   push:
     branches: [ main ]
     paths:
+      - 'README.md'
+      - 'skills.sh.json'
       - 'skills/**'
       - 'repo_tool/**'
       - '.github/workflows/dart_skills_validation.yaml'
