@@ -7,4 +7,6 @@ skills_lint:
   directories:
     - path: "../skills"
       rules:
-        check-relative-paths: { severity: error, within-skill: true }
+        check-relative-paths:
+          severity: error
+          within-skill: true
