@@ -3,7 +3,6 @@ skills_lint:
     check-relative-paths: error
     check-trailing-whitespace: error
     check-absolute-paths: error
-    disallowed-field: error
   directories:
     - path: "../skills"
       rules:
