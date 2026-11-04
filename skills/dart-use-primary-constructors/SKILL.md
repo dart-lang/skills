@@ -94,11 +94,7 @@ extension Ext on C;
 If a primary constructor requires assertions or custom field initializations, they can be declared in the body using the `this :` syntax:
 
 ```dart
-// `y` is a regular (non-declaring) parameter because the field `y` is
-// initialized in the `this :` initializer list below.
-class Point(var int x, int y) {
-  int y;
-
+class Point(var int x, var int y) {
   // Initializer list in class body
   this : assert(x >= 0), y = y * 2;
 }
