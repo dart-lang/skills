@@ -30,7 +30,7 @@ The `{@example}` directive parses an external file and resolves it into a fenced
 ///
 /// ```dart
 /// final client = Client();
-/// client.send();
+/// client.get(Uri.parse('https://example.com'));
 /// ```
 ```
 
@@ -51,7 +51,7 @@ import 'package:http/http.dart';
 void main() {
   // #region request_snippet
   final client = Client();
-  client.send();
+  client.get(Uri.parse('https://example.com'));
   // #endregion request_snippet
 }
 ```

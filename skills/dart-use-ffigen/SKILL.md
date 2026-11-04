@@ -39,20 +39,20 @@ To construct the programmatic generator, use the core configuration objects impo
 ### 1. `FfiGenerator`
 The parent class that orchestrates the configuration, parsing, and code generation.
 ```dart
-FfiGenerator({
-  Headers headers = const Headers(),
-  Enums enums = Enums.excludeAll,
-  Functions functions = Functions.excludeAll,
-  Globals globals = Globals.excludeAll,
-  Integers integers = const Integers(),
-  Macros macros = Macros.excludeAll,
-  Structs structs = Structs.excludeAll,
-  Typedefs typedefs = Typedefs.excludeAll,
-  Unions unions = Unions.excludeAll,
-  UnnamedEnums unnamedEnums = UnnamedEnums.excludeAll,
-  ObjectiveC? objectiveC,
-  required Output output,
-}).generate();
+FfiGenerator(
+  headers: const Headers(),
+  enums: Enums.excludeAll,
+  functions: Functions.excludeAll,
+  globals: Globals.excludeAll,
+  integers: const Integers(),
+  macros: Macros.excludeAll,
+  structs: Structs.excludeAll,
+  typedefs: Typedefs.excludeAll,
+  unions: Unions.excludeAll,
+  unnamedEnums: UnnamedEnums.excludeAll,
+  objectiveC: null,
+  output: output,
+).generate();
 ```
 
 ### 2. `Headers`
