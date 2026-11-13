@@ -4,7 +4,7 @@ description: >-
   Cross-platform file and directory path manipulation, segment splitting, extension extraction, and context conversion using `package:path` and `package:file`. Use when writing, inspecting, joining, splitting, or refactoring file paths, directory names, or extensions, or replacing raw string path operations (`.split('/')`, `'$dir/$file'`, `.endsWith('.ext')`, `.replaceAll('\\', '/')`). Don't use for HTTP network URI routing, database query strings, or non-path string processing.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Fri, 13 Nov 2026 02:48:00 GMT
+  last_modified: Fri, 13 Nov 2026 03:41:00 GMT
 ---
 
 # Safe Cross-Platform Path Manipulation in Dart
@@ -37,7 +37,7 @@ metadata:
 ### Lexical Canonicalization vs. Physical Symlink Resolution
 * `p.normalize(path)` resolves `.`, `..`, and redundant separators purely lexically while preserving relative vs. absolute form and case.
 * `p.canonicalize(path)` converts to an absolute path, normalizes segments, and standardizes ASCII case on Windows—still purely lexically (`package:path` never consults the filesystem and **does not resolve symlinks**).
-* When comparing physical file or directory identity on disk or keying caches across symlinks (such as macOS `/tmp` -> `/private/tmp`) and relative CLI flags (`-o out`), resolve symlinks via `Directory(path).resolveSymbolicLinksSync()` or `File(path).resolveSymbolicLinksSync()` (or `fileSystem.directory(path).resolveSymbolicLinksSync()` in `package:file`).
+* When comparing physical file or directory identity on disk or keying caches across symlinks (such as macOS `/tmp` -> `/private/tmp`) and relative CLI flags (`-o out`), resolve symlinks via `Directory(path).resolveSymbolicLinksSync()` or `File(path).resolveSymbolicLinksSync()` (or `fileSystem.directory(path).resolveSymbolicLinksSync()` in `package:file`). Unlike lexical `p.canonicalize(path)`, `resolveSymbolicLinksSync()` throws a `FileSystemException` if the path does not exist yet—ensure the target exists first or fall back to `p.canonicalize(path)` / `directory.absolute.path` on `FileSystemException`.
 
 ### Strip Location Specifiers & Convert URIs Safely
 * Strings formatted as `<path>:<line>-<col>` or `<path>:<line>` are not pure file paths. Passing them directly to `p.normalize` or `Uri.parse` causes bugs (on Windows, `Uri.parse` mistakes `C:` for a URI scheme and `:line` for a port).
@@ -198,7 +198,7 @@ String insertContentHash(String filename, String hash) {
 - [ ] Replace `.endsWith('.ext')` on file paths with `p.extension(path) == '.ext'`.
 - [ ] Replace manual dot-index slicing with `p.withoutExtension(path)` and `p.extension(path, [level])`.
 - [ ] Verify that code using `package:file` accesses `fileSystem.path` instead of global `p.*`.
-- [ ] Use `resolveSymbolicLinksSync()` instead of lexical `p.canonicalize(path)` when comparing physical on-disk paths across symlinks.
+- [ ] Use `resolveSymbolicLinksSync()` (catching `FileSystemException` when paths may not exist yet) instead of lexical `p.canonicalize(path)` when comparing physical on-disk paths across symlinks.
 - [ ] Ensure Git paths, `.gitignore` entries, and symlink targets use `p.posix` forward slashes.
 
 ---

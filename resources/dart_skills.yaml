@@ -424,7 +424,7 @@
 
     6.  **Distinguish Lexical Canonicalization from Physical Symlink Resolution:**
         *   `p.normalize(path)` and `p.canonicalize(path)` operate purely lexically (`package:path` never consults the filesystem and does not resolve symlinks).
-        *   When comparing physical file or directory identity on disk across symlinks or relative CLI output paths, call `Directory(path).resolveSymbolicLinksSync()` or `File(path).resolveSymbolicLinksSync()` (or `fileSystem.directory(path).resolveSymbolicLinksSync()` in `package:file`).
+        *   When comparing physical file or directory identity on disk across symlinks or relative CLI output paths, call `Directory(path).resolveSymbolicLinksSync()` or `File(path).resolveSymbolicLinksSync()` (or `fileSystem.directory(path).resolveSymbolicLinksSync()` in `package:file`), ensuring the path exists first or falling back lexically on `FileSystemException`.
   resources:
     - https://pub.dev/packages/path
     - https://pub.dev/packages/file
