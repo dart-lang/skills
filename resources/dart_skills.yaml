@@ -46,7 +46,7 @@
         *   **Logical-or Patterns (`||`):** Allow multiple cases to share a body or a guard in switch expressions or statements.
         *   **Relational and Logical-and Patterns (`>=`, `<=`, `&&`):** Match if a value falls within a specified range.
         *   **Record Patterns:** Match if an object is a record with specific fields, and can assign those fields to variables.
-        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields. Use rest elements (`['prefix', ...final rest]` or `[..., final parent, _]`) to match prefixes, extract suffixes, or slice tails from `uri.pathSegments`, `p.split(path)`, and `String.split()` results without manual `.length` checks, `.first`, or `.skip(1)`.
+        *   **List Patterns:** Match if an object is a list with a certain number of fields, and can match against subpatterns within those fields. Use rest elements (`['prefix', ...final rest]`, `[..., final parent, _]`, or `switch (basename.split('.'))` with inline `when` guards like `int.tryParse`) to match prefixes, classify multi-dot filenames without brittle regular expressions, extract suffixes, or slice tails from `uri.pathSegments`, `p.split(path)`, and `String.split()` results without manual `.length` checks, `.first`, or `.skip(1)`.
         *   **Map Patterns:** Useful for destructuring key-value pairs in deserialized data.
         *   **Variable Patterns:** Declare new local variables when a pattern matches and destructures a value.
         *   **Wildcard Patterns (`_`):** Use as a placeholder to ignore parts of a matched value. In list patterns, a rest element can also be used.
@@ -421,6 +421,10 @@
     5.  **Extract File Extensions & Compound Extensions:**
         *   Avoid manual `.lastIndexOf('.')` and `.substring()` arithmetic.
         *   Use `p.extension(path)` for single extensions and `p.extension(path, 2)` for compound extensions (such as `.js.map` or `.d.ts`), and `p.withoutExtension(path)` for stems.
+
+    6.  **Distinguish Lexical Canonicalization from Physical Symlink Resolution:**
+        *   `p.normalize(path)` and `p.canonicalize(path)` operate purely lexically (`package:path` never consults the filesystem and does not resolve symlinks).
+        *   When comparing physical file or directory identity on disk across symlinks or relative CLI output paths, call `Directory(path).resolveSymbolicLinksSync()` or `File(path).resolveSymbolicLinksSync()` (or `fileSystem.directory(path).resolveSymbolicLinksSync()` in `package:file`), ensuring the path exists first or falling back lexically on `FileSystemException`.
   resources:
     - https://pub.dev/packages/path
     - https://pub.dev/packages/file
