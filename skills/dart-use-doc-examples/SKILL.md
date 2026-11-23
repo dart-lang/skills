@@ -1,6 +1,6 @@
 ---
 name: dart-use-doc-examples
-description: "How to inject external code examples into Dartdoc using the {@example} directive, and how to filter those files using #hide, #region, and #endregion tags."
+description: "How to inject external code examples into Dartdoc ({@example}) and Markdown files (package:snippets), and how to filter those files using #hide, #region, and #endregion tags."
 ---
 
 # Using Examples in Dartdoc
@@ -12,6 +12,7 @@ description: "How to inject external code examples into Dartdoc using the {@exam
 *   [4. Marker Filtering Rules](#4-marker-filtering-rules)
 *   [5. Placement and Path Resolution](#5-placement-and-path-resolution)
 *   [6. Verification](#6-verification)
+*   [7. Markdown Files](#7-markdown-files)
 
 When writing documentation that requires multi-line code examples, you should generally extract those examples into standalone `.dart` files and inject them using the `{@example}` directive, rather than writing them inline inside `///` comments. This ensures the examples can be analyzed, linted, and executed.
 
@@ -94,3 +95,19 @@ The `{@example}` directive is a block-level directive. It must appear on its own
 After injecting examples:
 1.  Run `dart analyze` on the example files to ensure the hidden setup code compiles.
 2.  (Optional) Run `dart doc` to verify that dartdoc successfully parsed the directive without throwing a "Failed to read file" or "missing region" warning.
+
+## 7. Markdown Files
+Markdown renderers (GitHub, pub.dev) do not evaluate `{@example}` directives. To keep fenced code blocks in `README.md` and other `.md` files synchronized with the same source files, `#region` / `#hide` markers, and path rules, annotate the fence info string with `@example` and run [`package:snippets`](https://pub.dev/packages/snippets):
+
+````markdown
+```dart @example /example/client.dart#request_snippet
+final client = Client();
+await client.get(Uri.parse('https://example.com'));
+```
+````
+
+Update Markdown files after editing examples (requires Dart 3.12+):
+```console
+$ dart run snippets@ update
+```
+Run `dart run snippets@ validate` in CI to check that Markdown snippets are up to date.
